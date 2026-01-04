@@ -7,7 +7,7 @@ const authMiddleware = (req, res, next) => {
     return res.status(401).json({ message: "Not authenticated" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, "supersecretkey");
     req.user = decoded;
     next();
   } catch (error) {
