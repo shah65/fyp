@@ -1,1 +1,36 @@
- 
+ /* Glass Navbar */
+ .glass-nav {
+   background: rgba(255, 255, 255, 0.1);
+   backdrop-filter: blur(10px);
+   padding: 1rem 2rem;
+   border-radius: 0 0 20px 20px;
+   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+ }
+
+ /* Animated underline */
+ .nav-link {
+   position: relative;
+   color: white;
+   font-weight: 500;
+   font-size: 1.1rem;
+   text-decoration: none;
+ }
+
+ .nav-link::after {
+   content: "";
+   position: absolute;
+   bottom: -5px;
+   left: 0;
+   width: 0;
+   height: 3px;
+   background: #ff9a9e;
+   transition: width 0.3s ease;
+ }
+
+ .nav-link:hover {
+   color: #ffebf7;
+ }
+
+ .nav-link:hover::after {
+   width: 100%;
+ }

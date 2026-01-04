@@ -1,12 +1,14 @@
 import { useForm } from 'react-hook-form';
+import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/Api';
 import awkumImage from '../../public/awkumimg1.png';
+import AuthContext from '../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
- 
-  const {
+  const {login} = useContext(AuthContext)
+   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
@@ -19,6 +21,7 @@ const Login = () => {
         password: data.password,
       });
        console.log('Login Success: ', response.data);
+       login(response.data.user)
       navigate('/');
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';

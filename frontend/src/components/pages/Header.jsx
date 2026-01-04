@@ -1,11 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Header = () => {
+const Header = ({user}) => {
+  console.log("Header user ",user);
+  
   return (
     <header className="flex items-center w-full px-6">
       {/* Logo */}
       <div className="text-white hover:text-red-500  font-bold text-xl">AWKUM</div>
+       
 
       {/* Nav */}
       <nav className="flex space-x-4 ml-auto">
