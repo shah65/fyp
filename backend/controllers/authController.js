@@ -1,11 +1,12 @@
 import bcrypt from 'bcrypt';
 import importedUser from '../models/User.js';
 import jwt from 'jsonwebtoken'
+import Project from '../models/ProjectModel.js'
 
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, stdId, subject, semester,   } = req.body;
+    const { name, email, password, stdId, subject, department, semester,   } = req.body;
 
     // ✅ Check both email and student ID
     const existingUser = await importedUser.findOne({
@@ -17,10 +18,7 @@ export const register = async (req, res) => {
     }
 
     // ✅ Hash password
-       const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(password, salt);
-    // const hashedPassword = await bcrypt.hash(password, 12);
-
+         const hash = await bcrypt.hash(password, 12);
     // ✅ Save ALL required fields
     const user = await importedUser.create({
       name,
@@ -28,6 +26,7 @@ export const register = async (req, res) => {
       password: hash,
       stdId,
       subject,
+      department,
       semester,
        
     });
@@ -41,6 +40,7 @@ export const register = async (req, res) => {
         email: user.email,
         stdId: user.stdId,
         subject: user.subject,
+        department: user.department,
         semester: user.semester,
         role: user.role,
       },
@@ -72,6 +72,9 @@ export const login = async (req,res)=>{
     return res.status(401).json({ message: 'Invalid Credentials' });
     }
 
+   const project = await Project.findOne({ student: avilibleUser._id });
+
+
    //create jwt token
    const token = jwt.sign(
      {
@@ -97,6 +100,7 @@ export const login = async (req,res)=>{
        email: avilibleUser.email,
        stdId: avilibleUser.stdId,
        subject: avilibleUser.subject,
+       department: avilibleUser.department,
        semester: avilibleUser.semester,
      },
    })

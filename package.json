@@ -1,1 +1,10 @@
-{"dependencies":{"@tailwindcss/vite":"^4.1.18","cookie-parser":"^1.4.7","cors":"^2.8.5","tailwindcss":"^4.1.18"}}
+{
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "lucide-react": "^0.562.0",
+    "multer": "^2.0.2",
+    "tailwindcss": "^4.1.18"
+  }
+}

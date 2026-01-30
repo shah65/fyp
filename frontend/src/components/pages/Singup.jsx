@@ -14,25 +14,17 @@ const Signup = () => {
     reset,
     formState: { errors, isValid },
   } = useForm({ mode: 'onChange' });
-// useEffect(() => {
-//   reset({
-//     studentName: '',
-//     studentId: '',
-//     email: '',
-//     password: '',
-//     subject: '',
-//     semester: '',
-//   });
-// }, [reset]);
+ 
   const onSubmit = async (data) => {
     
     try {
-      await api.post('/signup', {
+      await api.post('/signup',{
         name: data.studentName,
         email: data.email,
         password: data.password,
         stdId: data.studentId,
         subject:data.subject,
+        department:data.department,
         semester:data.semester
         
       });
@@ -103,6 +95,7 @@ const Signup = () => {
                        placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-red-400"
           />
           {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>}
+          
           <input
             {...register('password', { required: 'Password is required' })}
             type="password"
@@ -121,6 +114,15 @@ const Signup = () => {
                        placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-red-400"
           />
           {errors.subject && <p className="text-red-400 text-sm mt-1">{errors.subject.message}</p>}
+
+          <input
+            {...register('department', { required: 'Department is required' })}
+            type="text"
+            placeholder="Department"
+            className="w-full px-4 py-2 rounded-lg bg-white/30 text-white
+                       placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+          {errors.department && <p className="text-red-400 text-sm mt-1">{errors.Department.message}</p>}
 
           <input
             type="text"

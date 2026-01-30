@@ -1,18 +1,36 @@
-import React, { useContext } from 'react'
-import mg from '../../assets/img.jpeg'
+import React, { useContext,useState } from 'react'
+import hil from '../../assets/hl.jpeg'
+import UploadProjectModal from './UploadProjectModel';
 import { useNavigate } from 'react-router-dom';
 import awkumImage from '../../public/awkumimg1.png';
 import tchrlogo from '../../public/tchlogo.png';
 import stdlgo from '../../public/stdlogo.png';
 import Header from '../../components/pages/Header';
-import Singup from './Singup';
 import AuthContext from '../context/AuthContext';
 import Footer from './Footer';
-const Home = () => {
-  const navigate = useNavigate();
+import api from '../../api/Api';
+ const Home = () => {
+   const navigate = useNavigate();
+   const [project, setProject] = useState(null);
    const { user } = useContext(AuthContext);
-   console.log("User data =>",user);
-   
+    
+
+   //const id = user.id
+    
+   const [showUpload, setShowUpload] = useState(false);
+   const getProjectId = async ()=>{
+   try {
+     const res = await api.get(`/student/project/me`, {
+       withCredentials: true,
+     });
+
+     navigate(`/project/${res.data._id}`);
+   } catch (err) {
+     alert("No project uploaded yet");
+   }
+    
+   }
+
 
    return (
      <>
@@ -55,7 +73,10 @@ const Home = () => {
         transition-all duration-300
         hover:bg-white/20 hover:-translate-y-3"
                >
-                 <img src={mg} className="w-44 h-44 rounded-2xl border border-white object-cover" />
+                 <img
+                   src={hil}
+                   className="w-44 h-44 rounded-2xl border border-white object-cover"
+                 />
 
                  <div className="text-white space-y-1">
                    <h1 className="text-2xl font-bold mb-2">Student Details</h1>
@@ -93,12 +114,22 @@ const Home = () => {
                >
                  <h2 className="text-xl font-bold text-white">Project Actions</h2>
 
-                 <button className="w-48 py-3 rounded-xl bg-indigo-500/80 text-white font-semibold hover:bg-indigo-300 hover:border-2 hover:border-blue-400 hover:text-zinc-700 transition">
+                 <button
+                   onClick={() => {
+                     setShowUpload(true);
+                     navigate('/upload')
+                   }}
+                   className="w-48 py-3 rounded-xl bg-indigo-500/80 text-white font-semibold hover:bg-indigo-300 hover:border-2 hover:border-blue-400 hover:text-zinc-700 transition"
+                 >
                    Upload Project
                  </button>
 
-                 <button className="w-48 py-3 rounded-xl bg-emerald-600/80 text-white font-semibold hover:bg-emerald-400 hover:text-zinc-700 hover:border-2 hover:border-green-200 transition">
-                   Edit Project
+                 <button
+                   onClick={getProjectId}
+                   className="w-48 py-3 rounded-xl bg-emerald-600/80 text-white font-semibold hover:bg-emerald-400 hover:text-zinc-700 hover:border-2 hover:border-green-200 transition"
+                 >
+                    view Project
+                   {/* {user.projectId ? 'View Project' : 'No Project Uploaded'} */}
                  </button>
                </div>
              </div>
@@ -191,6 +222,7 @@ const Home = () => {
            )}
          </div>
        </main>
+       {showUpload && <UploadProjectModal onClose={() => setShowUpload(false)} />}
      </>
    );
 }

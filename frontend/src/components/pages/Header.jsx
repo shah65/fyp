@@ -2,8 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const Header = ({user}) => {
-  console.log("Header user ",user);
-  
+   
   return (
     <header className="flex items-center w-full px-6">
       {/* Logo */}

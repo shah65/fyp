@@ -1,10 +1,11 @@
 import express  from 'express';
 // import dotenv from 'dotenv';
 import cors from 'cors';
+
 import cookieParser from 'cookie-parser';
 import connectionDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
-
+ 
 //  dotenv.config();
 connectionDB();
 
@@ -19,18 +20,14 @@ app.use(express.urlencoded({extended:true}))
 app.use(cookieParser())
 
 console.log('🔥 BACKEND FILE LOADED');
-// app.get('/',(req,res)=>{
-//   res.send('hy therer7tiukgjhgfsrhtejr')
-//   console.log('url is', req.method, req.url);
-  
-// })
-app.use('/',authRoutes);
  
-// app.get('/',(req,res)=>{
-//   res.send('hy')
-//   console.log('url is', req.method, req.url);
-  
-// })
+app.use('/',authRoutes);
+app.use("/upload", express.static("uploads"));
+app.use("/student",authRoutes);
+
+
+
+ 
 //const PORT = process.env.PORT  
 app.listen(4002,()=>{
 

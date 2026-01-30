@@ -15,8 +15,7 @@ const logout = () =>{
 const checkAuth = async () => {
   try {
     const res = await api.get('/me',{withCredentials:true});
-    console.log("auth data ",res.data.user);
-    
+     
     setUser(res.data.user);
   } catch (error) {
     setUser(null);
