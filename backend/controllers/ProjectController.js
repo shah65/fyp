@@ -1,5 +1,5 @@
 import Project from '../models/ProjectModel.js'
- 
+import group from '../models/Group.js'
 export const uploadProject = async(req,res) =>{
   try {
 
@@ -24,6 +24,16 @@ export const uploadProject = async(req,res) =>{
       document:req.file.path,
       student:req.user._id, // coming from  JWT;
     });
+    // 🔥 CREATE GROUP AUTOMATICALLY HERE
+    await group.create({
+      groupName: title,
+      description: title,
+      leader: req.user._id,
+      supervisor: supervisor,
+      members: []
+    });
+
+
     res.status(201).json({
       success:true,
       message:"Project Uploaded Succfully",

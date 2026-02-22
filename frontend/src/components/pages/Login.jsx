@@ -5,7 +5,7 @@ import api from '../../api/Api';
 import awkumImage from '../../public/awkumimg1.png';
 import AuthContext from '../context/AuthContext';
 
-const Login = () => {
+const Login = ( ) => {
   const navigate = useNavigate();
   const {login} = useContext(AuthContext)
    const {

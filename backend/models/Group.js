@@ -1,12 +1,17 @@
 import mongoose from 'mongoose';
 
+
 const memberSchema = new mongoose.Schema({
-  userId:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:'User',
-    required:true
+  name: {
+    type: String,
+    required: true,
+    unique: true,
   },
-  name:String,
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   rollNumber:{
     type:Number,
     unique:true,
@@ -14,25 +19,40 @@ const memberSchema = new mongoose.Schema({
   },
   role:{
     type:String,
-    enum:['leader','co-ordinator','member'],
-    required:true
+    enum:['co-ordinator','member','leader'],
+    required:true,
+    default:'member'
   },
-  description:String,
-  image:String,
-  createdSt:{
+  image:{
+    type:String,
+    default:null
+  },
+  createdAt:{
     type:Date,
     default:Date.now()
   },
 });
 
-
 const groupSchema = new mongoose.Schema({
-  projectId: mongoose.Schema.Types.ObjectId,
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  },
-  members: [memberSchema]
-}, { timestamps: true });
+  groupName: {
+    type: String,
+   },
 
+  description: {
+    type: String,
+  },
+
+  leader: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+
+  supervisor: {
+    type: String,
+  },
+
+  members: [memberSchema]
+
+}, { timestamps: true });
 export default mongoose.model("Group", groupSchema);
+ 

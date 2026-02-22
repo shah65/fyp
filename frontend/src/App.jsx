@@ -1,14 +1,15 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import Login from './components/pages/Login';
-import Logout from './components/pages/Logout';
 import Profile from './components/pages/Profile';
 import Singup from './components/pages/Singup';
+import Layout from './components/pages/Layout'
 import Home from './components/pages/Home';
 import AuthProvider from './components/context/AuthProvider';
 import ProtectedRoute from './components/routes/ProtectRoute';
 import Group from './components/pages/Group';
 import UploadProjectModal from './components/pages/UploadProjectModel';
 import ViewProject from './components/pages/ViewProject';
+import TeacherLoginPage from './components/adminPages/TeacherLoginPage';
  
  
 
@@ -20,11 +21,14 @@ const App = () => {
         <Router>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/teacherlogin" element={<TeacherLoginPage />} />
             <Route
               path="/group"
               element={
                 <ProtectedRoute>
-                  <Group />
+                  <Layout>
+                    <Group />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
@@ -52,7 +56,6 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
-            <Route path="/logout" element={<Logout />} />
             <Route path="/signup" element={<Singup />} />
             <Route path="/login" element={<Login />} />
           </Routes>
