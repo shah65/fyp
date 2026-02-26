@@ -1,37 +1,29 @@
+// models/Teacher.js
 import mongoose from 'mongoose';
 
-const userSchema = new mongoose.Schema(
+const teacherSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
       trim: true,
     },
-
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
     },
-
     password: {
       type: String,
       required: true,
     },
-
-    stdId: {
+    teacherId: {
       type: String,
       required: true,
       unique: true,
     },
-
     subject: {
-      type: String,
-      required: true,
-    },
-
-    semester: {
       type: String,
       required: true,
     },
@@ -39,21 +31,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    project:{
-      type:mongoose.Schema.Types.ObjectId,
-      ref:'Project'
+    qualification: {
+      type: String,
+      required: true,
     },
-    supervisor:{
-      type:mongoose.Schema.Types.ObjectId,
-      ref:'Teacher'
+    experience: {
+      type: Number,
+      default: 0,
     },
- role:{
-  type:String,default:'student'
- }
-
-    
+    role: {
+      type: String,
+      default: 'teacher',
+    },
+     
   },
   { timestamps: true }
 );
 
-export default mongoose.model('User', userSchema);
+export default mongoose.model('Teacher', teacherSchema);

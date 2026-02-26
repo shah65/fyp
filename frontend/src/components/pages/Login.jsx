@@ -1,96 +1,74 @@
-import { useForm } from 'react-hook-form';
-import { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../../api/Api';
-import awkumImage from '../../public/awkumimg1.png';
-import AuthContext from '../context/AuthContext';
+import { useForm } from "react-hook-form";
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../../api/Api";
+import AuthContext from "../context/AuthContext";
 
 const Login = ( ) => {
   const navigate = useNavigate();
-  const {login} = useContext(AuthContext)
-   const {
+  const { login } = useContext(AuthContext);
+
+  const {
     register,
     handleSubmit,
     formState: { errors, isValid },
-  } = useForm({ mode: 'onChange' });
+  } = useForm({ mode: "onChange" });
 
   const onSubmit = async (data) => {
     try {
-      const response = await api.post('/login', {
+      const response = await api.post("/login", {
         email: data.email,
         password: data.password,
+         
       });
-       console.log('Login Success: ', response.data);
-       login(response.data.user)
-      navigate('/');
+
+      login(response.data.user);
+
+      // Role based redirect
+      
+        navigate("/");
+      
+
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed';
-
-      alert(message);
-        
+      if(error.response && error.response.status === 401) {
+        alert("Password Incorect");
+      } else {
+        alert(error.response?.data?.message || "Login failed");
+      }
     }
-
-     
   };
 
   return (
-    <div className="relative w-screen h-screen flex items-center justify-center overflow-hidden">
-      {/* Background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${awkumImage})` }}
-      ></div>
+    <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="w-96 p-8 bg-white rounded-xl shadow-xl">
+         
 
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-black/40"></div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-      {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md p-8 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl">
-        <h1 className="text-3xl font-bold text-white text-center mb-6">Student Login</h1>
-
-        <form   onSubmit={handleSubmit(onSubmit)}   className="space-y-4">
-          {/* Email */}
           <input
             type="email"
-            placeholder="Student Email"
-            {...register('email', {
-              required: 'Email is required',
-            })}
-            className="w-full px-4 py-2 rounded-lg bg-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-red-400"
+            placeholder={`  Email `}
+            {...register("email", { required: "Email is required" })}
+            className="w-full p-2 border rounded"
           />
-          {errors.email && <p className="text-red-400 text-sm">{errors.email.message}</p>}
+          {errors.email && <p className="text-red-500">{errors.email.message}</p>}
 
-          {/* Password */}
           <input
             type="password"
             placeholder="Password"
-            {...register('password', {
-              required: 'Password is required',
-            })}
-            className="w-full px-4 py-2 rounded-lg bg-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-red-400"
+            {...register("password", { required: "Password is required" })}
+            className="w-full p-2 border rounded"
           />
-          {errors.password && <p className="text-red-400 text-sm">{errors.password.message}</p>}
+          {errors.password && <p className="text-red-500">{errors.password.message}</p>}
 
-          {/* Button */}
           <button
-            type="submit"
             disabled={!isValid}
-            className={`w-full py-2 mt-4 rounded-lg font-semibold text-lg transition-all
-              ${
-                isValid ? 'bg-red-500 hover:bg-red-600' : 'bg-red-300 cursor-not-allowed'
-              } text-white`}
+            className="w-full bg-blue-600 text-white p-2 rounded"
           >
             Login
           </button>
-        </form>
 
-        {/* Signup link */}
-        <p className="text-center text-white mt-6 text-sm">
-          Don’t have an account?{' '}
-          <a href="/signup" className="text-red-300 hover:underline">
-            Create one
-          </a>
-        </p>
+        </form>
       </div>
     </div>
   );

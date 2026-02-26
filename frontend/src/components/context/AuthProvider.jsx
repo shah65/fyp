@@ -7,6 +7,7 @@ const [user, setUser] = useState(null)
 const [loading, setLoading] = useState(true);
 const login = (userData) =>{
   setUser(userData);
+  console.log("User logged in:", userData);
 }
 
 const logout = () =>{

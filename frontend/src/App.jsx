@@ -10,6 +10,8 @@ import Group from './components/pages/Group';
 import UploadProjectModal from './components/pages/UploadProjectModel';
 import ViewProject from './components/pages/ViewProject';
 import TeacherLoginPage from './components/adminPages/TeacherLoginPage';
+import TeacherSignup from './components/adminPages/TeacherSignup';
+import TeacherHome from './components/adminPages/TeacherHome';
  
  
 
@@ -22,10 +24,14 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/teacherlogin" element={<TeacherLoginPage />} />
+            <Route path="/teacher/signup" element={<TeacherSignup />} />
+
+            <Route path="/teacher-home" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherHome /></ProtectedRoute>} />
+
             <Route
               path="/group"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['student']}>
                   <Layout>
                     <Group />
                   </Layout>
@@ -33,9 +39,9 @@ const App = () => {
               }
             />
             <Route
-              path="/profile"
+              path="/resources"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['student']}>
                   <Profile />
                 </ProtectedRoute>
               }
@@ -43,7 +49,7 @@ const App = () => {
             <Route
               path="/upload"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['student']}>
                   <UploadProjectModal />
                 </ProtectedRoute>
               }
@@ -51,7 +57,7 @@ const App = () => {
             <Route
               path="/project/:id"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['student']}>
                   <ViewProject />
                 </ProtectedRoute>
               }

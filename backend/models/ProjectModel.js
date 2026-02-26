@@ -14,8 +14,9 @@ const projectSchema = new mongoose.Schema(
     },
 
     supervisor: {
-      type: String,
-      required:true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
+       
     },
 
     document: {

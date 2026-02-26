@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 export const createGroup = async (req, res) => {
   try {
-    const { groupName, description, members } = req.body;
+    const { groupName, description, supervisor, members } = req.body;
     const leaderId = req.user.id;
 
     const group = await Group.create({

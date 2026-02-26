@@ -48,7 +48,8 @@ const groupSchema = new mongoose.Schema({
   },
 
   supervisor: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Teacher",
   },
 
   members: [memberSchema]

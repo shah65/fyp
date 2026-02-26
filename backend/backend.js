@@ -1,12 +1,13 @@
 import express  from 'express';
-// import dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import cors from 'cors';
 import groupRoute from './routes/group.route.js';
 import cookieParser from 'cookie-parser';
 import connectionDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
+import teacherR from './routes/teacher.route.js'
  
-//  dotenv.config();
+  dotenv.config();
 connectionDB();
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/',authRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/student",authRoutes);
 app.use('/group',groupRoute)
+app.use('/teacher',teacherR)
 
 
 
