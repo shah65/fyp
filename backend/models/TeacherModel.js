@@ -13,6 +13,7 @@ const teacherSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
+      index: true
     },
     password: {
       type: String,
@@ -22,6 +23,7 @@ const teacherSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      index: true
     },
     subject: {
       type: String,
@@ -38,6 +40,10 @@ const teacherSchema = new mongoose.Schema(
     experience: {
       type: Number,
       default: 0,
+    },
+    profileImage: {
+      type: String,
+      default: null, // Cloudinary URL
     },
     role: {
       type: String,

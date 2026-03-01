@@ -69,6 +69,9 @@ const Login = ( ) => {
           </button>
 
         </form>
+        <button className="w-full mt-4 bg-gray-500 text-white p-2 rounded" onClick={() => navigate("/signup")}>
+          Register
+        </button>
       </div>
     </div>
   );

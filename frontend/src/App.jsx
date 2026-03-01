@@ -55,7 +55,7 @@ const App = () => {
               }
             />
             <Route
-              path="/project/:id"
+              path="/student/project/:id"
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <ViewProject />

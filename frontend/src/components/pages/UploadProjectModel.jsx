@@ -9,7 +9,8 @@ const UploadProjectModal = ({ onClose }) => {
   const [form, setForm] = useState({
     title: '',
     technology: '',
-    supervisor: '',
+    supervisorId: '',
+    description: '',
   });
   const [pdf, setPdf] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ const UploadProjectModal = ({ onClose }) => {
     e.preventDefault();
 
     // Validate form
-    if (!form.title || !form.technology || !form.supervisor) {
+    if (!form.title || !form.technology || !form.supervisorId || !form.description) {
       alert('Please fill all fields');
       return;
     }
@@ -45,7 +46,8 @@ const UploadProjectModal = ({ onClose }) => {
       const data = new FormData();
       data.append("title", form.title);
       data.append("technology", form.technology);
-      data.append("supervisor", form.supervisor);
+      data.append("supervisorId", form.supervisorId);
+      data.append("description", form.description);
       data.append("pdf", pdf); // Make sure this matches your backend field name
 
       const response = await api.post('/upload', data, {
@@ -145,12 +147,23 @@ const UploadProjectModal = ({ onClose }) => {
             required
             disabled={loading}
           />
+          <input
+            type="text"
+            name="description"
+            placeholder="Description..."
+            value={form.description}
+            onChange={handleChange}
+            className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/20 
+            focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+            required
+            disabled={loading}
+          />
 
           <input
             type="text"
-            name="supervisor"
-            placeholder="Supervisor name"
-            value={form.supervisor}
+            name="supervisorId"
+            placeholder="Supervisor ID"
+            value={form.supervisorId}
             onChange={handleChange}
             className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/20 
             focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"

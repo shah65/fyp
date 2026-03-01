@@ -61,7 +61,7 @@ export const login = async (req, res) => {
     if (!avilibleUser) {
       return res.status(401).json({
         message: "Please Create An Account Frst",
-        redirect: '/signup'
+       
       })
     }
 
@@ -80,7 +80,7 @@ export const login = async (req, res) => {
       {
         id: avilibleUser._id,
         email: avilibleUser.email,
-        role: 'student', // Explicitly set role as 'student' for users logging in through this route
+        role: avilibleUser.role || 'student' // Explicitly set role as 'student' for users logging in through this route
       },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
@@ -102,6 +102,10 @@ export const login = async (req, res) => {
         subject: avilibleUser.subject,
         department: avilibleUser.department,
         semester: avilibleUser.semester,
+        role: avilibleUser.role || 'student',
+        projectId: avilibleUser.project
+
+
       },
     })
 

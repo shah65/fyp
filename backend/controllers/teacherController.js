@@ -1,35 +1,135 @@
 import Group from '../models/Group.js';
 import Teacher from '../models/TeacherModel.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import Project from '../models/ProjectModel.js'; // Make sure path is correct
+import Project from '../models/ProjectModel.js';
+
+// Get teacher profile details
+export const getTeacherProfile = async (req, res) => {
+  try {
+    const teacherId = req.user.id; // from auth middleware
+
+    const teacher = await Teacher.findById(teacherId)
+      .select('-password') // exclude password
+      .lean();
+
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: 'Teacher not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      teacher
+    });
+  } catch (error) {
+    console.error('Error in getTeacherProfile:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Update teacher profile
+export const updateTeacherProfile = async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+    const { name, subject, department, qualification, experience } = req.body;
+
+    const teacher = await Teacher.findByIdAndUpdate(
+      teacherId,
+      {
+        name,
+        subject,
+        department,
+        qualification,
+        experience
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: 'Teacher not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      teacher
+    });
+  } catch (error) {
+    console.error('Error in updateTeacherProfile:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Upload profile image
+export const uploadProfileImage = async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
+      });
+    }
+
+    const teacher = await Teacher.findByIdAndUpdate(
+      teacherId,
+      { profileImage: req.file.path }, // Cloudinary URL from multer-storage-cloudinary
+      { new: true }
+    ).select('-password');
+
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: 'Teacher not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile image uploaded successfully',
+      imageUrl: teacher.profileImage,
+      teacher
+    });
+  } catch (error) {
+    console.error('Error in uploadProfileImage:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 
 // Get all students under this teacher (from groups they supervise)
 export const getMyStudents = async (req, res) => {
   try {
-    const teacherId = req.user.id; // from auth middleware
+    const teacherId = req.user.id;
 
-    // 1. Find all groups where this teacher is the supervisor
     const groups = await Group.find({ supervisor: teacherId })
-      .populate('leader', 'name email stdId department semester') // populate leader details
-      .lean(); // lean for plain JS objects (faster)
-
-    // 2. Collect all unique student emails from these groups
-    //    - Leader email (from populated leader)
-    //    - Member emails (from embedded members array)
-    const leaderEmails = groups.map(g => g.leader?.email).filter(email => email);
-    const memberEmails = groups.flatMap(g => g.members.map(m => m.email));
-
-    // Combine and remove duplicates using Set
-    const allEmails = [...new Set([...leaderEmails, ...memberEmails])];
-
-    // 3. Find all User documents matching these emails
-    const students = await User.find({ email: { $in: allEmails } })
-      .select('-password') // exclude password
+      .populate('leader', 'name email stdId department semester')
       .lean();
 
-    // 4. Return the list
+    const leaderEmails = groups.map(g => g.leader?.email).filter(email => email);
+    const memberEmails = groups.flatMap(g => g.members.map(m => m.email));
+    const allEmails = [...new Set([...leaderEmails, ...memberEmails])];
+
+    const students = await User.find({ email: { $in: allEmails } })
+      .select('-password')
+      .lean();
+
     res.json({
       success: true,
       count: students.length,
@@ -41,110 +141,64 @@ export const getMyStudents = async (req, res) => {
   }
 };
 
-// Get detailed info of a specific student (including their group and project)
-export const getStudentDetails = async (req, res) => {
-  try {
-    const { studentId } = req.params;
-    const teacherId = req.user.id;
+ 
 
-    // 1. Find the student by ID
-    const student = await User.findById(studentId).select('-password').lean();
-    if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
-    }
-
-    // 2. Find the group supervised by this teacher that contains this student
-    //    The student could be either the leader or a member (matched by email)
-    const group = await Group.findOne({
-      supervisor: teacherId,
-      $or: [
-        { leader: studentId },
-        { 'members.email': student.email }
-      ]
-    })
-      .populate('leader', 'name email') // populate leader details
-      .lean();
-
-    if (!group) {
-      return res.status(403).json({ message: 'Student not under your supervision' });
-    }
-
-    // 3. Get the student's project (if any)
-    const project = await Project.findOne({ student: studentId })
-      .populate('supervisor', 'name email') // this assumes supervisor is a Teacher reference
-      .lean();
-
-    // 4. Return combined data
-    res.json({
-      success: true,
-      student,
-      group: {
-        groupName: group.groupName,
-        description: group.description,
-        members: group.members
-      },
-      project: project || null
-    });
-  } catch (error) {
-    console.error('Error in getStudentDetails:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Dashboard stats: number of groups supervised, total students, projects under supervision
+// Dashboard stats
 export const getDashboardStats = async (req, res) => {
   try {
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
 
-    // 1. Get all groups supervised by this teacher (populate leader to get emails)
     const groups = await Group.find({ supervisor: teacherId })
-      .populate('leader', 'email') // only need email for counting
+      .populate('leader', 'name email')
       .lean();
 
     const totalGroups = groups.length;
 
-    // 2. Collect all unique student emails from these groups
-    const leaderEmails = groups.map(g => g.leader?.email).filter(email => email);
+    const leaderEmails = groups.map(g => g.leader?.email).filter(Boolean);
     const memberEmails = groups.flatMap(g => g.members.map(m => m.email));
     const allEmails = [...new Set([...leaderEmails, ...memberEmails])];
 
-    // 3. Count actual registered students with those emails
     const totalStudents = await User.countDocuments({ email: { $in: allEmails } });
 
-    // 4. Get leader IDs to count projects (projects are linked to the student leader)
-    const leaderIds = groups.map(g => g.leader?._id).filter(id => id);
+    const leaderIds = groups.map(g => g.leader?._id).filter(Boolean);
     const totalProjects = await Project.countDocuments({ student: { $in: leaderIds } });
 
-    // 5. Get recent projects from these leaders
     const recentProjects = await Project.find({ student: { $in: leaderIds } })
       .populate('student', 'name email')
       .sort('-createdAt')
       .limit(5)
       .lean();
 
-    // 6. Return stats
+    // Get teacher details for the response
+    const teacher = await Teacher.findById(teacherId)
+      .select('-password')
+      .lean();
+
     res.json({
       success: true,
       stats: {
         totalGroups,
         totalStudents,
         totalProjects,
-        recentProjects
-      }
+        recentProjects,
+      },
+      teacher // Include teacher details in dashboard response
     });
   } catch (error) {
     console.error('Error in getDashboardStats:', error);
     res.status(500).json({ message: error.message });
   }
-}; 
+};
 
+// Teacher Registration
 export const registerTeacher = async (req, res) => {
   try {
     const { name, email, password, teacherId, subject, department, qualification, experience, secretkey } = req.body;
-    console.log("Received registration data:", { name, email, teacherId, subject, department, qualification, secretkey, experience })
-    //verify secret key
+
+    console.log("Received registration data:", { name, email, teacherId, subject, department, qualification, secretkey, experience });
+
     if (secretkey !== process.env.TEACHER_SECRET_KEY) {
-      return res.status(401).json({ message: "Unauthorized: Invalid secret key" })
+      return res.status(401).json({ message: "Unauthorized: Invalid secret key" });
     }
 
     const existenceTeacher = await Teacher.findOne({
@@ -167,7 +221,7 @@ export const registerTeacher = async (req, res) => {
       qualification,
       experience: experience || 0,
     });
-    // Clean response
+
     res.status(201).json({
       message: 'Teacher registered successfully',
       user: {
@@ -181,8 +235,9 @@ export const registerTeacher = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: err.message });
   }
-}
+};
 
+// Teacher Login
 export const teacherLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -191,7 +246,6 @@ export const teacherLogin = async (req, res) => {
       console.log("Teacher not found with email:", email);
       return res.status(401).json({
         message: "No account found with this email",
-
       });
     }
 
@@ -207,14 +261,14 @@ export const teacherLogin = async (req, res) => {
       id: teacher._id,
       email: teacher.email,
       role: teacher.role || 'teacher'
-
-    }, process.env.JWT_SECRET, { expiresIn: '1d' })
+    }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
+
     console.log("Login successful for:", teacher.name);
 
     res.status(200).json({
@@ -223,7 +277,8 @@ export const teacherLogin = async (req, res) => {
         id: teacher._id,
         name: teacher.name,
         email: teacher.email,
-        role: teacher.role || 'teacher'
+        role: teacher.role || 'teacher',
+        profileImage: teacher.profileImage || null
       },
     });
 
@@ -231,4 +286,18 @@ export const teacherLogin = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Server error during login. Please try again.' });
   }
-}
+};
+
+// Logout teacher
+export const teacherLogout = async (req, res) => {
+  try {
+    res.clearCookie('token');
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Error in teacherLogout:', error);
+    res.status(500).json({ message: error.message });
+  }
+};

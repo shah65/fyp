@@ -1,59 +1,48 @@
-import mongoose from 'mongoose';
+// models/User.js
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    name: { type: String, required: true, trim: true },
 
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
+      index: true
     },
 
-    password: {
-      type: String,
-      required: true,
-    },
+    password: { type: String, required: true },
 
     stdId: {
       type: String,
       required: true,
-      unique: true,
+      unique: true
     },
 
-    subject: {
-      type: String,
-      required: true,
+    subject: { type: String, required: true },
+    semester: { type: String, required: true },
+    department: { type: String, required: true },
+
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+      default: null
     },
 
-    semester: {
-      type: String,
-      required: true,
+    supervisor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
+      default: null
     },
-    department: {
-      type: String,
-      required: true,
-    },
-    project:{
-      type:mongoose.Schema.Types.ObjectId,
-      ref:'Project'
-    },
-    supervisor:{
-      type:mongoose.Schema.Types.ObjectId,
-      ref:'Teacher'
-    },
- role:{
-  type:String,default:'student'
- }
 
-    
+    role: {
+      type: String,
+      default: "student"
+    }
   },
   { timestamps: true }
 );
 
-export default mongoose.model('User', userSchema);
+export default mongoose.model("User", userSchema);

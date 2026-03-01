@@ -2,40 +2,39 @@ import mongoose from "mongoose";
 
 const projectSchema = new mongoose.Schema(
   {
-    title: {
+    title: { type: String, required: true, trim: true },
+    technology: { type: String, required: true },
+    description: String,
+    document: {
       type: String,
-      required: true,
-      trim: true,
+      required: true
     },
-
-    technology: {
-      type: String,
-      required: true,
-    },
-
     supervisor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
-       
+      required: true
     },
-
-    document: {
-      type: String, // file path or cloud url
-      required: true,
-    },
-
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
-      unique:true
+      required: true
     },
-
-    // status: {
-    //   type: String,
-    //   enum: ["pending", "approved", "rejected"],
-    //   default: "pending",
-    // },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending"
+    },
+    supervisorRemarks: {
+      type: String,
+      default: ""
+    },
+    statusHistory: [{
+      status: {
+        type: String,
+        enum: ["pending", "approved", "rejected"]
+      },
+      remarks: String,
+    }],
   },
   { timestamps: true }
 );

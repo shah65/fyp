@@ -3,7 +3,7 @@ import { upload } from '../middleware/Multer.js';
 import { uploadProject } from '../controllers/ProjectController.js';
 import {register,login, me,logout} from '../controllers/authController.js'
 import authMiddleware from '../middleware/authMiddleware.js';
-import { getProject } from '../controllers/ProjectController.js';
+import { getMyProject } from '../controllers/ProjectController.js';
  
 const router = express.Router();
 
@@ -26,7 +26,7 @@ router.post('/upload',
   },
   uploadProject
 ); 
-router.get('/project/:id',authMiddleware,getProject);
+router.get('/project/:id', authMiddleware, getMyProject);
 
 router.get('/me',authMiddleware,me)
 router.post('/logout',logout)
