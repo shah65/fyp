@@ -17,7 +17,9 @@ export const createGroup = async (req, res) => {
       description,
       leader: leaderId,
       members: members || [],
-      supervisor: req.body.supervisor || 'Not Assigned'
+      supervisor: req.body.supervisor || 'Not Assigned',
+      status: 'pending' // Add status field to track group approval
+
     });
 
     res.status(201).json({
@@ -279,6 +281,88 @@ export const removeMember = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error removing member"
+    });
+  }
+};
+
+export const deleteGroup = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find group where user is leader
+    const group = await Group.findOne({ leader: userId });
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Group not found or you are not the group leader"
+      });
+    }
+
+    // Delete all member images
+    if (group.members && group.members.length > 0) {
+      group.members.forEach(member => {
+        if (member.image) {
+          const imagePath = path.join(__dirname, '../..', member.image);
+          if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+            console.log('✅ Member image deleted:', imagePath);
+          }
+        }
+      });
+    }
+
+    // Delete the group
+    await Group.findByIdAndDelete(group._id);
+
+    res.json({
+      success: true,
+      message: "Group deleted successfully. You can now create a new group."
+    });
+
+  } catch (error) {
+    console.error('❌ Delete group error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting group"
+    });
+  }
+};
+
+export const updateGroupStatus = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { status } = req.body; // 'approved', 'rejected', 'pending'
+    const userId = req.user.id;
+
+    // Check if user is supervisor (you'll need to add role check)
+    const group = await Group.findById(groupId);
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Group not found"
+      });
+    }
+
+    group.status = status;
+    if (status === 'rejected') {
+      group.rejectionReason = req.body.reason || 'No reason provided';
+    }
+
+    await group.save();
+
+    res.json({
+      success: true,
+      message: `Group ${status} successfully`,
+      group
+    });
+
+  } catch (error) {
+    console.error('❌ Update group status error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating group status"
     });
   }
 };

@@ -51,49 +51,44 @@ export const register = async (req, res) => {
   }
 };
 
-
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
-  //check User if have
   try {
     const avilibleUser = await importedUser.findOne({ email });
     if (!avilibleUser) {
       return res.status(401).json({
-        message: "Please Create An Account Frst",
-       
-      })
+        message: "Please Create An Account First",
+      });
     }
-
-    //passwordMatching
 
     const isMatch = await bcrypt.compare(password.toString(), avilibleUser.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid Credentials' });
     }
 
-    const project = await Project.findOne({ student: avilibleUser._id });
-
-
-    //create jwt token
+    // Create JWT token
     const token = jwt.sign(
       {
         id: avilibleUser._id,
         email: avilibleUser.email,
-        role: avilibleUser.role || 'student' // Explicitly set role as 'student' for users logging in through this route
+        role: avilibleUser.role || 'student'
       },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
+    // Set cookie
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000,
     });
 
+    // ✅ FIX: Send token in response body as well
     res.status(200).json({
       message: 'Login successful',
+      token, // 👈 THIS IS WHAT YOUR FRONTEND NEEDS
       user: {
         id: avilibleUser._id,
         name: avilibleUser.name,
@@ -104,10 +99,8 @@ export const login = async (req, res) => {
         semester: avilibleUser.semester,
         role: avilibleUser.role || 'student',
         projectId: avilibleUser.project
-
-
       },
-    })
+    });
 
   } catch (error) {
     console.error(error);
@@ -124,27 +117,61 @@ export const logout = async (req, res) => {
   }
 }
 
+// controllers/authController.js
 export const me = async (req, res) => {
   try {
-    // Try to find a student (User)
-    let user = await importedUser.findById(req.user.id).select('-password').lean();
-    if (user) {
-      user.role = 'student'; // ✅ Works on plain object
-      return res.json({ user });
+    // Check if user is already attached by middleware
+    if (req.user) {
+      let user = await importedUser.findById(req.user._id).select('-password').lean();
+      if (user) {
+        user.role = 'student';
+        return res.json({
+          success: true,
+          user
+        });
+      }
+
+      user = await Teacher.findById(req.user._id).select('-password').lean();
+      if (user) {
+        user.role = user.role || 'teacher';
+        return res.json({
+          success: true,
+          user
+        });
+      }
     }
 
-    // If not a student, try teacher
-    user = await Teacher.findById(req.user.id).select('-password').lean();
-    if (user) {
-      // Teacher model already has role, but ensure it's set (in case it's missing)
-      user.role = user.role || 'teacher';
-      return res.json({ user });
+    // If no user in request, try to get from token in Authorization header
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        let user = await importedUser.findById(decoded.id).select('-password').lean();
+        if (user) {
+          user.role = 'student';
+          return res.json({ success: true, user });
+        }
+
+        user = await Teacher.findById(decoded.id).select('-password').lean();
+        if (user) {
+          user.role = user.role || 'teacher';
+          return res.json({ success: true, user });
+        }
+      } catch (jwtError) {
+        console.error('JWT verification failed:', jwtError);
+      }
     }
 
-    // Neither found
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(401).json({
+      success: false,
+      message: 'Not authenticated'
+    });
   } catch (error) {
     console.error('Error in /me:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
   }
 };

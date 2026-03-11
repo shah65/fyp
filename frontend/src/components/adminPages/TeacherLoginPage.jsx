@@ -22,21 +22,50 @@ const TeacherLoginPage = () => {
     }
   });
 
-  // TeacherLoginPage.jsx - Update the error handling part
   const onSubmit = async (data) => {
     // Clear any previous server errors
     setServerError('');
 
     try {
-      console.log("Attempting login with:", data.email); // Debug log
+      console.log("Attempting login with:", data.email);
+
       const response = await api.post("/teacher/login", {
         email: data.email,
         password: data.password,
       });
 
-      console.log("Login response:", response.data); // Debug log
-      login(response.data.user);
-      navigate("/teacher-home");
+      console.log("Login response:", response.data);
+
+      // Check if token exists in response
+      if (!response.data.token) {
+        console.error('No token in response!');
+        setServerError('Server did not return authentication token');
+        return;
+      }
+
+      // Log token for debugging
+      console.log('Token received:', response.data.token.substring(0, 20) + '...');
+
+      // Prepare user data with explicit role
+      const userData = {
+        ...response.data.user,
+        role: 'teacher' // Ensure role is set
+      };
+
+      // ✅ FIX: Pass BOTH user data AND token to login function
+      login(userData, response.data.token);
+
+      // Verify token was stored
+      const storedToken = localStorage.getItem('token');
+      console.log('Token stored after login:', !!storedToken);
+
+      if (storedToken) {
+        // Redirect to teacher home
+        navigate("/teacher-home");
+      } else {
+        console.error('Token not stored in localStorage!');
+        setServerError('Login failed: Could not save authentication token');
+      }
 
     } catch (error) {
       console.error('Full error object:', error);
@@ -44,7 +73,7 @@ const TeacherLoginPage = () => {
 
       // Handle different error scenarios based on backend response
       if (error.code === 'ERR_NETWORK') {
-        setServerError("Cannot connect to server. Please check if backend is running on port 5000.");
+        setServerError("Cannot connect to server. Please check if backend is running on port 4002.");
       }
       else if (error.response) {
         const { status, data } = error.response;
@@ -55,7 +84,6 @@ const TeacherLoginPage = () => {
         if (status === 401) {
           if (data.message === "No account found with this email") {
             setServerError("No account found with this email. Please create an account first.");
-            // Optional: Auto-redirect after a delay
             setTimeout(() => {
               if (window.confirm("Would you like to create a teacher account?")) {
                 navigate("/teacher/signup");
@@ -69,7 +97,7 @@ const TeacherLoginPage = () => {
             setServerError(data.message || "Authentication failed");
           }
         }
-        // Handle 404 Not Found - means the /teachers/login endpoint doesn't exist
+        // Handle 404 Not Found
         else if (status === 404) {
           setServerError("Login endpoint not found. Please check if teacher routes are configured in backend.");
         }
@@ -186,8 +214,8 @@ const TeacherLoginPage = () => {
             type="submit"
             disabled={!isValid || isSubmitting}
             className={`w-full py-3 px-4 rounded-lg text-white font-medium transition transform hover:translate-y-[-2px] ${!isValid || isSubmitting
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
               }`}
           >
             {isSubmitting ? (
@@ -218,7 +246,11 @@ const TeacherLoginPage = () => {
           </p>
         </div>
 
-        
+        {/* Debug Info - Remove in production */}
+        <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+          <p>Debug: localStorage token: {localStorage.getItem('token') ? '✅' : '❌'}</p>
+          <p>Debug: localStorage role: {localStorage.getItem('userRole') || 'none'}</p>
+        </div>
 
       </div>
     </div>

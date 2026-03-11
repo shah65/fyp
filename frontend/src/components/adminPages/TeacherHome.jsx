@@ -230,7 +230,7 @@ const TeacherHome = () => {
               {/* Image Upload */}
               <div className="flex flex-col items-center">
                 <div className="relative group">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-1"> {/* FIXED: bg-gradient instead of bg-linear */}
+                  <div className="w-32 h-32 rounded-full bg-linear-to-br from-purple-500 to-pink-500 p-1"> {/* FIXED: bg-gradient instead of bg-linear */}
                     <div className="w-full h-full rounded-full bg-gray-900 overflow-hidden">
                       {teacher.profileImage ? (
                         <img
@@ -438,7 +438,7 @@ const TeacherHome = () => {
                 transform transition-all duration-300 hover:scale-105 hover:-translate-y-1
                 hover:shadow-2xl hover:shadow-purple-500/20
               `}>
-                <div className={`absolute inset-0 bg-gradient-to-br ${card.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`}></div> {/* FIXED: bg-gradient */}
+                <div className={`absolute inset-0 bg-linear-to-br ${card.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`}></div> {/* FIXED: bg-gradient */}
                 <div className="relative z-10">
                   <div className="flex items-start justify-between">
                     <div>
@@ -519,9 +519,9 @@ const TeacherHome = () => {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors duration-300">
+                          <h2 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors duration-300">
                             {proj.title}
-                          </h3>
+                          </h2>
                           {/* ADDED: Status badge in project list */}
                           <span className={`text-xs px-2 py-1 rounded-full border ${getStatusColor(proj.status)}`}>
                             {proj.status || 'pending'}
@@ -547,7 +547,7 @@ const TeacherHome = () => {
                           {proj.technology || 'Not specified'}
                         </span>
                         <button
-                          onClick={() => {
+                                                  onClick={() => {
                             console.log('Project clicked:', proj); // Debug log
                             if (proj && proj._id) {
                               handleViewProject(proj);
@@ -555,7 +555,7 @@ const TeacherHome = () => {
                               console.error('Project ID is missing:', proj);
                             }
                           }}
-                          className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 group-hover:translate-x-1 transform transition-transform"
+                          className="p-2 hover:bg-white/10 rounded-lg transition-transform duration-200 group-hover:translate-x-1 transform transition-transform"
                         >
                           <svg className="w-5 h-5 text-white/40 group-hover:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -564,7 +564,7 @@ const TeacherHome = () => {
                       </div>
                     </div>
                     <div className="mt-3 w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full w-2/3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full group-hover:w-3/4 transition-all duration-500"></div> {/* FIXED: bg-gradient */}
+                      <div className="h-full w-2/3 bg-linear-to-r from-purple-500 to-pink-500 rounded-full group-hover:w-3/4 transition-all duration-500"></div> {/* FIXED: bg-gradient */}
                     </div>
                   </div>
                 </div>

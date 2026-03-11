@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiUsers, FiSettings, FiLogOut, FiChevronDown, FiBookOpen } from 'react-icons/fi';
+import { FiHome, FiUsers, FiSettings, FiLogOut, FiChevronDown, FiBookOpen, FiBarChart2, FiVideo } from 'react-icons/fi';
 import { CgProfile } from 'react-icons/cg';
 import { MdDashboard } from 'react-icons/md';
 import api from '../../api/Api';
@@ -57,19 +57,19 @@ const Header = ({ user }) => {
 
   // Navigation items for easy management
   const navItems = [
-    { path: '/', icon: <FiHome />, text: 'Home' },
+    { path: '/home', icon: <FiHome />, text: 'Home' },
     { path: '/resources', icon: <FiBookOpen />, text: 'Resources' },
     { path: '/group', icon: <FiUsers />, text: 'Group' },
-    // { path: '/dashboard', icon: <MdDashboard />, text: 'Dashboard' },
+    { path: '/student/meetings', icon: <FiVideo />, text: 'Meetings' },  // ← add this
+ 
   ];
 
   return (
     <header
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled
           ? 'bg-linear-to-r from-indigo-900/95 via-purple-900/95 to-pink-900/95 backdrop-blur-md shadow-lg py-2'
           : 'bg-linear-to-r from-indigo-800 to-purple-800 py-4'
-      }`}
+        }`}
     >
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between">
@@ -123,7 +123,7 @@ const Header = ({ user }) => {
 
             {/* Dropdown Menu with Animation */}
             {isOpen && (
-              <div className="absolute   right-0 mt-2 w-64 animate-slideDown">
+              <div className="absolute right-0 mt-2 w-64 animate-slideDown">
                 <div className="bg-white/10 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden">
                   {/* User Info Card */}
                   <div className="p-4 bg-linear-to-r from-blue-600/20 to-purple-600/20 border-b border-white/10">
@@ -142,6 +142,7 @@ const Header = ({ user }) => {
 
                   {/* Menu Items */}
                   <div className="p-2">
+                    {/* Uncomment Profile if needed */}
                     {/* <DropdownItem
                       to="/profile"
                       icon={<CgProfile />}
@@ -174,46 +175,40 @@ const Header = ({ user }) => {
                     >
                       {/* Background gradient on hover */}
                       <div
-                        className={`absolute inset-0 transition-opacity duration-300 ${
-                          hoveredItem === 'logout'
+                        className={`absolute inset-0 transition-opacity duration-300 ${hoveredItem === 'logout'
                             ? 'bg-linear-to-r from-red-500/30 to-red-600/30 opacity-100'
                             : 'opacity-0'
-                        }`}
+                          }`}
                       ></div>
 
                       <div className="relative flex items-center space-x-3">
                         <div
-                          className={`p-2 rounded-lg transition-all duration-200 ${
-                            hoveredItem === 'logout' ? 'bg-red-500/30' : 'bg-red-500/20'
-                          }`}
+                          className={`p-2 rounded-lg transition-all duration-200 ${hoveredItem === 'logout' ? 'bg-red-500/30' : 'bg-red-500/20'
+                            }`}
                         >
                           <FiLogOut
-                            className={`transition-colors duration-200 ${
-                              hoveredItem === 'logout' ? 'text-red-300' : 'text-red-400'
-                            }`}
+                            className={`transition-colors duration-200 ${hoveredItem === 'logout' ? 'text-red-300' : 'text-red-400'
+                              }`}
                           />
                         </div>
                         <div className="text-left">
                           <div
-                            className={`font-medium transition-colors duration-200 ${
-                              hoveredItem === 'logout' ? 'text-white' : 'text-white'
-                            }`}
+                            className={`font-medium transition-colors duration-200 ${hoveredItem === 'logout' ? 'text-white' : 'text-white'
+                              }`}
                           >
                             Logout
                           </div>
                           <div
-                            className={`text-sm transition-colors duration-200 ${
-                              hoveredItem === 'logout' ? 'text-white/70' : 'text-white/50'
-                            }`}
+                            className={`text-sm transition-colors duration-200 ${hoveredItem === 'logout' ? 'text-white/70' : 'text-white/50'
+                              }`}
                           >
                             Sign out of your account
                           </div>
                         </div>
                       </div>
                       <span
-                        className={`transition-all duration-200 ${
-                          hoveredItem === 'logout' ? 'text-white/70 translate-x-1' : 'text-white/30'
-                        }`}
+                        className={`transition-all duration-200 ${hoveredItem === 'logout' ? 'text-white/70 translate-x-1' : 'text-white/30'
+                          }`}
                       >
                         →
                       </span>
@@ -238,19 +233,17 @@ const NavLink = ({ to, icon, text, active = false }) => {
       to={to}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`group relative px-4 py-2 rounded-lg overflow-hidden transition-all duration-300 ${
-        active ? 'text-white bg-white/20 shadow-lg' : 'text-white/80 hover:text-white'
-      }`}
+      className={`group relative px-4 py-2 rounded-lg overflow-hidden transition-all duration-300 ${active ? 'text-white bg-white/20 shadow-lg' : 'text-white/80 hover:text-white'
+        }`}
     >
       {/* Animated background on hover/active */}
       <div
-        className={`absolute inset-0 transition-all duration-500 ${
-          active
+        className={`absolute inset-0 transition-all duration-500 ${active
             ? 'bg-linear-to-r from-white/20 to-white/5'
             : isHovered
               ? 'bg-white/10 scale-100'
               : 'bg-white/0 scale-0'
-        }`}
+          }`}
         style={{ transformOrigin: 'center' }}
       ></div>
 
@@ -262,9 +255,8 @@ const NavLink = ({ to, icon, text, active = false }) => {
       {/* Content */}
       <div className="relative flex items-center space-x-2">
         <span
-          className={`text-lg transition-transform duration-300 ${
-            isHovered || active ? 'scale-110' : ''
-          }`}
+          className={`text-lg transition-transform duration-300 ${isHovered || active ? 'scale-110' : ''
+            }`}
         >
           {icon}
         </span>
@@ -290,15 +282,15 @@ const NavLink = ({ to, icon, text, active = false }) => {
 };
 
 // Enhanced DropdownItem Component with active state
-const DropdownItem = ({ 
-  to, 
-  icon, 
-  text, 
-  description, 
+const DropdownItem = ({
+  to,
+  icon,
+  text,
+  description,
   isActive = false,
   onClick,
   onHover,
-  isHovered = false 
+  isHovered = false
 }) => {
   const [localHover, setLocalHover] = useState(false);
 
@@ -320,13 +312,12 @@ const DropdownItem = ({
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`group flex items-center justify-between p-3 rounded-lg transition-all duration-200 relative overflow-hidden ${
-        isActive 
-          ? 'bg-linear-to-r from-blue-500/30 to-purple-500/30 border-l-2 border-purple-400' 
-          : showHover 
-            ? 'bg-white/15' 
+      className={`group flex items-center justify-between p-3 rounded-lg transition-all duration-200 relative overflow-hidden ${isActive
+          ? 'bg-linear-to-r from-blue-500/30 to-purple-500/30 border-l-2 border-purple-400'
+          : showHover
+            ? 'bg-white/15'
             : 'hover:bg-white/10'
-      }`}
+        }`}
     >
       {/* Background glow for active item */}
       {isActive && (
@@ -334,28 +325,24 @@ const DropdownItem = ({
       )}
 
       <div className="relative flex items-center space-x-3">
-        <div className={`p-2 rounded-lg transition-all duration-200 ${
-          isActive 
-            ? 'bg-linear-to-r from-blue-500/40 to-purple-500/40' 
-            : showHover 
-              ? 'bg-white/25' 
+        <div className={`p-2 rounded-lg transition-all duration-200 ${isActive
+            ? 'bg-linear-to-r from-blue-500/40 to-purple-500/40'
+            : showHover
+              ? 'bg-white/25'
               : 'bg-white/10 group-hover:bg-white/20'
-        }`}>
-          <span className={`transition-colors duration-200 ${
-            isActive ? 'text-white' : 'text-white/80 group-hover:text-white'
           }`}>
+          <span className={`transition-colors duration-200 ${isActive ? 'text-white' : 'text-white/80 group-hover:text-white'
+            }`}>
             {icon}
           </span>
         </div>
         <div className="text-left">
-          <div className={`font-medium transition-colors duration-200 ${
-            isActive ? 'text-white' : 'text-white'
-          }`}>
+          <div className={`font-medium transition-colors duration-200 ${isActive ? 'text-white' : 'text-white'
+            }`}>
             {text}
           </div>
-          <div className={`text-sm transition-colors duration-200 ${
-            isActive ? 'text-white/80' : 'text-white/50 group-hover:text-white/70'
-          }`}>
+          <div className={`text-sm transition-colors duration-200 ${isActive ? 'text-white/80' : 'text-white/50 group-hover:text-white/70'
+            }`}>
             {description}
           </div>
         </div>
@@ -367,9 +354,8 @@ const DropdownItem = ({
           <span className="text-white/80 animate-pulse-slow">←</span>
         )}
         {!isActive && (
-          <span className={`transition-all duration-200 ${
-            showHover ? 'text-white/70 translate-x-1' : 'text-white/30'
-          }`}>
+          <span className={`transition-all duration-200 ${showHover ? 'text-white/70 translate-x-1' : 'text-white/30'
+            }`}>
             →
           </span>
         )}

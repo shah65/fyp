@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Project from '../models/ProjectModel.js';
-
+ 
 // Get teacher profile details
 export const getTeacherProfile = async (req, res) => {
   try {
@@ -34,6 +34,20 @@ export const getTeacherProfile = async (req, res) => {
   }
 };
 
+
+export const getTeacherGroups = async (req, res) => {
+  try {
+    const teacherId = req.user._id;
+
+    const groups = await Group.find({ supervisor: teacherId, status: 'approved' })
+      .populate('leader', 'name email stdId')
+      .lean();
+
+    res.json({ success: true, groups });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 // Update teacher profile
 export const updateTeacherProfile = async (req, res) => {
   try {
@@ -140,8 +154,6 @@ export const getMyStudents = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
- 
 
 // Dashboard stats
 export const getDashboardStats = async (req, res) => {
@@ -273,6 +285,7 @@ export const teacherLogin = async (req, res) => {
 
     res.status(200).json({
       message: 'Login successful',
+      token,
       user: {
         id: teacher._id,
         name: teacher.name,

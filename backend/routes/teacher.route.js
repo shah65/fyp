@@ -1,15 +1,21 @@
 import express from 'express';
 import multer from 'multer';
-import { getProjectDetails,updateProjectStatus,addProjectFeedback } from '../controllers/ProjectController.js';
+import {
+  getPendingRequests,
+  getApprovedProjects,
+  getRejectedProjects, 
+  getProjectDetails,
+  updateProjectStatus,
+  addProjectFeedback } from '../controllers/ProjectController.js';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../config/cloudinary.js'; // Import configured cloudinary
 import {
   registerTeacher,
   teacherLogin,
   getMyStudents,
-   getDashboardStats,
+  getDashboardStats,
   getTeacherProfile,
-  updateTeacherProfile,
+  getTeacherGroups,
   uploadProfileImage,
   teacherLogout
 } from '../controllers/teacherController.js';
@@ -42,11 +48,19 @@ router.use(authMiddleware, authorizeTeacher);
 
 // Teacher profile routes
 router.get('/profile', getTeacherProfile);
-router.put('/profile', updateTeacherProfile);
+// router.put('/profile', updateTeacherProfile);
 router.post('/profile/image', upload.single('profileImage'), uploadProfileImage);
 
 // Dashboard stats
 router.get('/dashboard', getDashboardStats);
+router.get('/students', getMyStudents);
+router.get('/groups', getTeacherGroups);   // ← add this line
+
+
+// Project request routes - IMPORTANT: Order matters! Put specific routes before dynamic ones
+router.get('/requests/pending', getPendingRequests);
+router.get('/projects/approved', getApprovedProjects);
+router.get('/projects/rejected', getRejectedProjects);
 
 router.get('/project/:projectId/details', getProjectDetails);
 router.patch('/project/:projectId/status', updateProjectStatus);

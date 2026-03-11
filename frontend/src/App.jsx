@@ -1,6 +1,6 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import Login from './components/pages/Login';
-import Profile from './components/pages/Profile';
+import Resources from './components/pages/Resources';
 import Singup from './components/pages/Singup';
 import Layout from './components/pages/Layout'
 import Home from './components/pages/Home';
@@ -8,11 +8,22 @@ import AuthProvider from './components/context/AuthProvider';
 import ProtectedRoute from './components/routes/ProtectRoute';
 import Group from './components/pages/Group';
 import UploadProjectModal from './components/pages/UploadProjectModel';
-import ViewProject from './components/pages/ViewProject';
 import TeacherLoginPage from './components/adminPages/TeacherLoginPage';
 import TeacherSignup from './components/adminPages/TeacherSignup';
 import TeacherHome from './components/adminPages/TeacherHome';
+import Setting from './components/pages/Setting';
+import TeacherSetting from './components/adminPages/TeacherSetting';
+import TeacherPendingRequests from './components/adminPages/TeacherPendingRequest';
+import TeacherApprovedProjects from './components/adminPages/TeacherApprovedProjects';
+import TeacherRejectedPage from './components/adminPages/TeacherRejectedPage';
  
+
+// ── Meeting pages ──────────────────────────────────────────────
+import TeacherMeetingsPage from './components/adminPages/TeacherMeetingsPage';
+import StudentMeetingsPage from './components/pages/StudentMeetingPage';
+import MeetingRoomPage from './components/meeting/MeetingRoom';
+import LandingPage from './components/pages/LandingPage';
+
  
 
 const App = () => {
@@ -22,12 +33,9 @@ const App = () => {
       <AuthProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/teacherlogin" element={<TeacherLoginPage />} />
-            <Route path="/teacher/signup" element={<TeacherSignup />} />
-
-            <Route path="/teacher-home" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherHome /></ProtectedRoute>} />
-
+            <Route path="/" element={<LandingPage />} />
+           
+            {/* ── Student routes ───────────────────────────────── */}
             <Route
               path="/group"
               element={
@@ -38,11 +46,17 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="/home" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                 <Home /> 
+              </ProtectedRoute>
+            } />
             <Route
               path="/resources"
               element={
                 <ProtectedRoute allowedRoles={['student']}>
-                  <Profile />
+                  <Layout><Resources /></Layout>
+                     
                 </ProtectedRoute>
               }
             />
@@ -54,16 +68,51 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+          
             <Route
-              path="/student/project/:id"
+              path="/settings"
               element={
                 <ProtectedRoute allowedRoles={['student']}>
-                  <ViewProject />
+                  <Layout>
+                    <Setting />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
-            <Route path="/signup" element={<Singup />} />
+
+            {/* Student meetings — leader views scheduled/live sessions */}
+            <Route path="/student/meetings" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Layout><StudentMeetingsPage /></Layout>
+              </ProtectedRoute>
+            } />
+          
+            {/*Teacher Routes */}
+            <Route path="/teacher-home" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherHome /></ProtectedRoute>} />
+            <Route path="/teacher/settings" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherSetting /></ProtectedRoute>} />
+            <Route path="/teacher/pending-request" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherPendingRequests /></ProtectedRoute>} />
+            <Route path="/teacher/approved-projects" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherApprovedProjects /></ProtectedRoute>} />
+            <Route path="/teacher/rejected-project" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherRejectedPage /></ProtectedRoute>} />
+            {/* Teacher meetings — full control dashboard */}
+            <Route path="/teacher/meetings" element={
+              <ProtectedRoute allowedRoles={['teacher']}>
+                <TeacherMeetingsPage />
+              </ProtectedRoute>
+            } />
+            {/* ── Shared meeting room (teacher + student) ──────── */}
+            {/* No Layout wrapper — room is fullscreen */}
+            <Route path="/meeting/room/:roomId" element={
+              <ProtectedRoute allowedRoles={['teacher', 'student']}>
+                <MeetingRoomPage />
+              </ProtectedRoute>
+            } />
+
+            {/* ── Auth routes ──────────────────────────────────── */}
+            <Route path="/register" element={<Singup />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/teacherlogin" element={<TeacherLoginPage />} />
+            <Route path="/teacher/signup" element={<TeacherSignup />} />
+
           </Routes>
         </Router>
       </AuthProvider>
