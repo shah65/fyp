@@ -24,7 +24,7 @@ const authMiddleware = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Decoded token:", decoded);
+    //console.log("Decoded token:", decoded);
 
     // Variable to store found user
     let user = null;
@@ -57,12 +57,12 @@ const authMiddleware = async (req, res, next) => {
     // Also add role to the user object itself
     req.user.role = userType;
 
-    console.log('Auth middleware - User authenticated:', {
-      id: req.userId,
-      role: req.userRole,
-      type: req.userType,
-      userRole: req.user.role
-    });
+    // console.log('Auth middleware - User authenticated:', {
+    //   id: req.userId,
+    //   role: req.userRole,
+    //   type: req.userType,
+    //   userRole: req.user.role
+    // });
 
     next();
 

@@ -47,8 +47,26 @@ const projectSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending"
-    }
-
+    },
+// New fields for resources
+  githubRepo: {
+      type: String,
+      trim:true,
+      validate: {
+        validator: function (v) {
+          if (!v) return true; // Allow empty
+          // GitHub URL validation
+          return /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w-]+/.test(v);
+        },
+        message: 'Please provide a valid GitHub repository URL'
+      }
+    },
+    projectVideo: {
+      type: String // URL to uploaded video
+    },
+    videoPublicId: {
+      type: String // Cloudinary public ID for video management
+    },
   },
   { timestamps: true }
 );

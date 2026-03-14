@@ -127,7 +127,7 @@ const Group = () => {
 
   const fetchGroup = async () => {
     try {
-      const res = await api.get('/group/mygroup/my');
+      const res = await api.get('/group/my-group');
       setGroup(res.data.group);
     } catch (err) {
       console.log(err);

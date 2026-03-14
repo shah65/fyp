@@ -11,7 +11,8 @@ const createDirectories = () => {
   const dirs = [
     path.join(__dirname, '../uploads'),
     path.join(__dirname, '../uploads/members'),  // For member images
-    path.join(__dirname, '../uploads/projects') // For project PDFs
+    path.join(__dirname, '../uploads/projects'), // For project PDFs
+    path.join(__dirname, '../uploads/videos')    // For project videos
   ];
 
   dirs.forEach(dir => {
@@ -36,13 +37,27 @@ const memberStorage = multer.diskStorage({
   }
 });
 
-// Storage for PDF files (your existing one)
+// Storage for PDF files
 const pdfStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `project-${uniqueSuffix}${ext}`);
+  }
+});
+
+// FIXED: Video Storage configuration
+const videoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/videos/'); // Added trailing slash
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `video-${uniqueSuffix}${ext}`); // Fixed: cd -> cb
   }
 });
 
@@ -59,37 +74,62 @@ const imageFilter = (req, file, cb) => {
   }
 };
 
-// PDF file filter (your existing one)
+// PDF file filter
 const pdfFilter = (req, file, cb) => {
   const allowed = /pdf/;
   const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-  if (ext) {
+  const mimetype = file.mimetype === 'application/pdf';
+
+  if (ext && mimetype) {
     cb(null, true);
   } else {
     cb(new Error("Only PDF files are allowed"), false);
   }
 };
 
+// Video file filter
+const videoFilter = (req, file, cb) => {
+  const allowedTypes = /mp4|webm|mov|quicktime/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = file.mimetype.startsWith('video/');
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only video files (MP4, WebM, MOV) are allowed'), false);
+  }
+};
+
 // Create multer instances
 const uploadMemberImage = multer({
   storage: memberStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit for images
   fileFilter: imageFilter
 });
 
 const uploadPdf = multer({
   storage: pdfStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for PDFs
   fileFilter: pdfFilter
 });
 
-// Export both upload middlewares
+const uploadVideo = multer({
+  storage: videoStorage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit for videos
+  fileFilter: videoFilter
+});
+
+// Export all upload middlewares
 export const upload = {
-  memberImage: uploadMemberImage.single('image'),  // For single member image
-  pdf: uploadPdf.single('pdf'),                    // For single PDF file
-  memberImages: uploadMemberImage.array('images', 5), // For multiple images
-  pdfs: uploadPdf.array('pdfs', 3)                   // For multiple PDFs
+  memberImage: uploadMemberImage.single('image'),
+  memberImages: uploadMemberImage.array('images', 5),
+  pdf: uploadPdf.single('pdf'),
+  pdfs: uploadPdf.array('pdfs', 3),
+  video: uploadVideo.single('video'),
+  videos: uploadVideo.array('videos', 1)
 };
 
-// For backward compatibility (your existing export)
-export const pdfUpload = uploadPdf.single('pdf');
-export const memberImageUpload = uploadMemberImage.single('image');
+// For backward compatibility - FIXED: These should be functions, not properties
+export const pdfUpload = (fieldName = 'pdf') => uploadPdf.single(fieldName);
+export const memberImageUpload = (fieldName = 'image') => uploadMemberImage.single(fieldName);
+export const videoUpload = (fieldName = 'video') => uploadVideo.single(fieldName);

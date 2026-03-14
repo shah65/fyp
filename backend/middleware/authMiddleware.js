@@ -25,7 +25,7 @@ const authMiddleware = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Decoded token:", decoded);
+    //console.log("Decoded token:", decoded);
 
     // Variable to store found user
     let user = null;

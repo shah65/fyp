@@ -36,168 +36,73 @@ export const createGroup = async (req, res) => {
   }
 };
 
-// Add member with image upload
 export const addMember = async (req, res) => {
-  // Use the memberImageUpload middleware
-  memberImageUpload(req, res, async (err) => {
-    if (err) {
-      // Handle multer errors
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({
-          success: false,
-          message: "Image file is too large. Maximum size is 5MB.",
-          field: 'image'
-        });
-      }
+  try {
+    const { name, email, rollNumber, role } = req.body;
+    const userId = req.user.id;
 
+    if (!name || !email || !rollNumber) {
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({
         success: false,
-        message: err.message,
-        field: 'image'
+        message: "Please provide all required fields",
+        field: !name ? 'name' : !email ? 'email' : 'rollNumber'
       });
     }
 
-    try {
-      const { name, email, rollNumber, role } = req.body;
-      const userId = req.user.id;
-
-      // Validation
-      if (!name || !email || !rollNumber) {
-        // Delete uploaded file if validation fails
-        if (req.file) {
-          fs.unlinkSync(req.file.path);
-        }
-
-        return res.status(400).json({
-          success: false,
-          message: "Please provide all required fields",
-          field: !name ? 'name' : !email ? 'email' : 'rollNumber'
-        });
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        if (req.file) fs.unlinkSync(req.file.path);
-        return res.status(400).json({
-          success: false,
-          message: "Please enter a valid email address",
-          field: 'email'
-        });
-      }
-
-      // Find group where user is leader
-      const group = await Group.findOne({ leader: userId });
-
-      if (!group) {
-        if (req.file) fs.unlinkSync(req.file.path);
-        return res.status(404).json({
-          success: false,
-          message: "No group found or you are not the group leader."
-        });
-      }
-
-      // Check member limit
-      if (group.members.length >= 3) {
-        if (req.file) fs.unlinkSync(req.file.path);
-        return res.status(400).json({
-          success: false,
-          message: "Cannot add more members. Maximum 3 members allowed.",
-          limit: 3,
-          current: group.members.length
-        });
-      }
-
-      // Check for duplicate email
-      const existingEmail = group.members.find(
-        m => m.email.toLowerCase() === email.toLowerCase()
-      );
-
-      if (existingEmail) {
-        if (req.file) fs.unlinkSync(req.file.path);
-        return res.status(400).json({
-          success: false,
-          message: `Email "${email}" already exists in this group.`,
-          field: 'email',
-          errorType: "DUPLICATE_ERROR"
-        });
-      }
-
-      // Check for duplicate roll number
-      const existingRollNo = group.members.find(
-        m => m.rollNumber === rollNumber
-      );
-
-      if (existingRollNo) {
-        if (req.file) fs.unlinkSync(req.file.path);
-        return res.status(400).json({
-          success: false,
-          message: `Roll number "${rollNumber}" already exists in this group.`,
-          field: 'rollNumber',
-          errorType: "DUPLICATE_ERROR"
-        });
-      }
-
-      // Prepare image path
-      let imagePath = null;
-      if (req.file) {
-        imagePath = `/uploads/members/${req.file.filename}`;
-      }
-
-      // Add new member
-      const newMember = {
-        name,
-        email: email.toLowerCase(),
-        rollNumber,
-        role: role || 'member',
-        image: imagePath,
-        joinedAt: new Date()
-      };
-
-      group.members.push(newMember);
-      await group.save();
-
-      // Populate leader info
-      await group.populate("leader", "name email");
-
-      // Add full URL for images
-      const groupObj = group.toObject();
-      if (groupObj.members) {
-        groupObj.members = groupObj.members.map(member => {
-          if (member.image) {
-            member.image = `${req.protocol}://${req.get('host')}${member.image}`;
-          }
-          return member;
-        });
-      }
-
-      res.status(201).json({
-        success: true,
-        message: "Member added successfully!",
-        group: groupObj
-      });
-
-    } catch (error) {
-      console.error("Error adding member:", error);
-
-      // Delete uploaded file if error
-      if (req.file) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (unlinkError) {
-          console.error('Error deleting file:', unlinkError);
-        }
-      }
-
-      res.status(500).json({
-        success: false,
-        message: "An unexpected error occurred.",
-        errorType: "SERVER_ERROR"
-      });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: "Please enter a valid email address", field: 'email' });
     }
-  });
+
+    const group = await Group.findOne({ leader: userId });
+    if (!group) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, message: "No group found or you are not the group leader." });
+    }
+
+    if (group.members.length >= 3) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: "Cannot add more members. Maximum 3 members allowed." });
+    }
+
+    if (group.members.find(m => m.email.toLowerCase() === email.toLowerCase())) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: `Email "${email}" already exists.`, field: 'email', errorType: "DUPLICATE_ERROR" });
+    }
+
+    if (group.members.find(m => m.rollNumber === rollNumber)) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: `Roll number "${rollNumber}" already exists.`, field: 'rollNumber', errorType: "DUPLICATE_ERROR" });
+    }
+
+    const newMember = {
+      name,
+      email: email.toLowerCase(),
+      rollNumber,
+      role: role || 'member',
+      image: req.file ? `/uploads/members/${req.file.filename}` : null,
+      joinedAt: new Date()
+    };
+
+    group.members.push(newMember);
+    await group.save();
+    await group.populate("leader", "name email");
+
+    const groupObj = group.toObject();
+    groupObj.members = groupObj.members.map(member => {
+      if (member.image) member.image = `${req.protocol}://${req.get('host')}${member.image}`;
+      return member;
+    });
+
+    return res.status(201).json({ success: true, message: "Member added successfully!", group: groupObj });
+
+  } catch (error) {
+    if (req.file) { try { fs.unlinkSync(req.file.path); } catch (e) { } }
+    return res.status(500).json({ success: false, message: "An unexpected error occurred: " + error.message });
+  }
 };
-
 export const getMyGroup = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -241,6 +146,152 @@ export const getMyGroup = async (req, res) => {
   }
 };
 
+//get sngle member dtetail
+export const getMember = async (req,res) =>{
+  try {
+    const {memberId} = req.params;
+    const userId = req.user.id;
+    const group  = await Group.findOne({
+      $or:[
+        {leader:userId},
+        {'members._id':userId}
+      ]
+    });
+    if(!group){
+      return res.status(404).json({
+        success:false,
+        message:"Group not found!"
+      })
+    }
+
+    const member = group.members.id(memberId);
+    if(!member){
+      return res.status(404).json({
+        success:false,
+        message:"Member not found!"
+      });
+    }
+
+    const memberObj = member.toObject();
+    if(memberObj.image){
+      memberObj.image = `${req.protocol}://${req.get('host')}${memberObj.image}`;
+
+    }
+    res.json({
+      success:true,
+      member:memberObj
+    })
+  } catch (error) {
+    console.error('Get member error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching member"
+    });
+  }
+}
+
+// Update member
+export const updateMember = async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { name, email, rollNumber, role } = req.body;
+    const userId = req.user.id;
+
+    const group = await Group.findOne({ leader: userId });
+
+    if (!group) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({
+        success: false,
+        message: "Group not found or you are not the leader"
+      });
+    }
+
+    const member = group.members.id(memberId);
+    if (!member) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({
+        success: false,
+        message: "Member not found"
+      });
+    }
+
+    // Check for duplicate email if changing
+    if (email && email.toLowerCase() !== member.email) {
+      const existingEmail = group.members.find(
+        m => m.email.toLowerCase() === email.toLowerCase() && m._id.toString() !== memberId
+      );
+      if (existingEmail) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(400).json({
+          success: false,
+          message: `Email "${email}" already exists in this group.`,
+          field: 'email'
+        });
+      }
+      member.email = email.toLowerCase();
+    }
+
+    // Check for duplicate roll number if changing
+    if (rollNumber && rollNumber !== member.rollNumber) {
+      const existingRollNo = group.members.find(
+        m => m.rollNumber === rollNumber && m._id.toString() !== memberId
+      );
+      if (existingRollNo) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(400).json({
+          success: false,
+          message: `Roll number "${rollNumber}" already exists in this group.`,
+          field: 'rollNumber'
+        });
+      }
+      member.rollNumber = rollNumber;
+    }
+
+    // Update fields
+    if (name) member.name = name;
+    if (role) member.role = role;
+
+    // Handle image update
+    if (req.file) {
+      if (member.image) {
+        const oldImagePath = path.join(__dirname, '../..', member.image);
+        if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+      }
+      member.image = `/uploads/members/${req.file.filename}`;
+    }
+
+    await group.save();
+
+    await group.populate([
+      { path: 'leader', select: 'name email' },
+      { path: 'supervisor', select: 'name email' }
+    ]);
+
+    const groupObj = group.toObject();
+    if (groupObj.members) {
+      groupObj.members = groupObj.members.map(m => {
+        if (m.image) m.image = `${req.protocol}://${req.get('host')}${m.image}`;
+        return m;
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Member updated successfully!",
+      group: groupObj
+    });
+
+  } catch (error) {
+    console.error('Update member error:', error);
+    if (req.file) { try { fs.unlinkSync(req.file.path); } catch (e) { } }
+    res.status(500).json({
+      success: false,
+      message: "Error updating member"
+    });
+  }
+};
+
 // Remove member
 export const removeMember = async (req, res) => {
   try {
@@ -270,6 +321,11 @@ export const removeMember = async (req, res) => {
     // Remove member
     group.members.pull(memberId);
     await group.save();
+    // Populate for response
+    await group.populate([
+      { path: 'leader', select: 'name email' },
+      { path: 'supervisor', select: 'name email' }
+    ]);
 
     res.json({
       success: true,
@@ -285,49 +341,6 @@ export const removeMember = async (req, res) => {
   }
 };
 
-export const deleteGroup = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    // Find group where user is leader
-    const group = await Group.findOne({ leader: userId });
-
-    if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found or you are not the group leader"
-      });
-    }
-
-    // Delete all member images
-    if (group.members && group.members.length > 0) {
-      group.members.forEach(member => {
-        if (member.image) {
-          const imagePath = path.join(__dirname, '../..', member.image);
-          if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
-            console.log('✅ Member image deleted:', imagePath);
-          }
-        }
-      });
-    }
-
-    // Delete the group
-    await Group.findByIdAndDelete(group._id);
-
-    res.json({
-      success: true,
-      message: "Group deleted successfully. You can now create a new group."
-    });
-
-  } catch (error) {
-    console.error('❌ Delete group error:', error);
-    res.status(500).json({
-      success: false,
-      message: "Error deleting group"
-    });
-  }
-};
 
 export const updateGroupStatus = async (req, res) => {
   try {
@@ -351,7 +364,10 @@ export const updateGroupStatus = async (req, res) => {
     }
 
     await group.save();
-
+    await group.populate([
+      { path: 'leader', select: 'name email' },
+      { path: 'supervisor', select: 'name email' }
+    ]);
     res.json({
       success: true,
       message: `Group ${status} successfully`,
@@ -363,6 +379,45 @@ export const updateGroupStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error updating group status"
+    });
+  }
+};
+// Delete group
+export const deleteGroup = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const group = await Group.findOne({ leader: userId });
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Group not found or you are not the leader"
+      });
+    }
+
+    // Delete all member images
+    for (const member of group.members) {
+      if (member.image) {
+        const imagePath = path.join(__dirname, '../..', member.image);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
+    }
+
+    await group.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Group deleted successfully"
+    });
+
+  } catch (error) {
+    console.error('Delete group error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting group"
     });
   }
 };

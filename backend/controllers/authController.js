@@ -1,8 +1,17 @@
 import bcrypt from 'bcrypt';
 import importedUser from '../models/User.js';
 import jwt from 'jsonwebtoken'
-import Project from '../models/ProjectModel.js'
-import Teacher from '../models/TeacherModel.js';
+import { memberImageUpload } from '../middleware/Multer.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import Teacher from '../models/TeacherModel.js'
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
 
 export const register = async (req, res) => {
   try {
@@ -48,6 +57,43 @@ export const register = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
+  }
+};
+export const uploadProfileImage = async (req, res) => {
+
+
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const userId = req.user.id;
+    const user = await importedUser.findById(userId);
+    if (!user) {
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Delete old image if exists
+    if (user.image) {
+      const oldImagePath = path.join(__dirname, '../..', user.image);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+
+    // Save new image path
+    const imageUrl = `/uploads/members/${req.file.filename}`;
+    user.image = imageUrl;
+    await user.save();
+
+    // Return full URL
+    const fullUrl = `${req.protocol}://${req.get('host')}${imageUrl}`;
+    res.json({ success: true, message: 'Profile image updated', imageUrl: fullUrl, user: { ...user.toObject(), image: fullUrl } });
+  } catch (error) {
+    console.error('Upload error:', error);
+    if (req.file) fs.unlinkSync(req.file.path);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -98,7 +144,10 @@ export const login = async (req, res) => {
         department: avilibleUser.department,
         semester: avilibleUser.semester,
         role: avilibleUser.role || 'student',
-        projectId: avilibleUser.project
+        projectId: avilibleUser.project,
+        image: avilibleUser.image
+          ? `${req.protocol}://${req.get('host')}${avilibleUser.image}`
+          : null,
       },
     });
 
@@ -125,6 +174,9 @@ export const me = async (req, res) => {
       let user = await importedUser.findById(req.user._id).select('-password').lean();
       if (user) {
         user.role = 'student';
+        if(user.image){
+          user.image = `${req.protocol}://${req.get('host')}${user.image}`
+        }
         return res.json({
           success: true,
           user

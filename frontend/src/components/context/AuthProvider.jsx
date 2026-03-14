@@ -118,6 +118,23 @@ const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
+  const refreshUser = async () => {
+    try {
+      const storedToken = token || localStorage.getItem('token');
+      if (!storedToken) return;
+      const res = await api.get('/me', {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      });
+      if (res.data.success) {
+        setUser(res.data.user);
+        localStorage.setItem('userRole', res.data.user.role);
+        localStorage.setItem('userName', res.data.user.name || '');
+        localStorage.setItem('userEmail', res.data.user.email || '');
+      }
+    } catch (error) {
+      console.error('Refresh user failed:', error);
+    }
+  };
 
   // Helper function to get auth headers
   const getAuthHeaders = () => {
@@ -148,8 +165,10 @@ const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    setUser,
     login,
     logout,
+    refreshUser,
     token: token || localStorage.getItem('token'),
     isAuthenticated, // Now this is a boolean, not a function
     hasRole,

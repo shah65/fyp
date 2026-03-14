@@ -6,7 +6,9 @@ import User from "../models/User.js";
 import Feedback from '../models/FeedbackModel.js';
 import crypto from 'crypto'; // For generating secure random codes
 import bcrypt from 'bcrypt'; // Added for hashing approval codes
-
+import  cloudinary from '../config/cloudinary.js';
+import fs from 'fs';
+import path from 'path'
 
 
 // ==================== STUDENT CONTROLLERS ====================
@@ -265,6 +267,51 @@ export const getMyProject = async (req, res) => {
     });
   }
 };
+// Get project by student ID (for initial fetch)
+export const getProjectByStudentId = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const project = await Project.findOne({ student: studentId })
+      .populate('student', 'name email stdId')
+      .populate('supervisor', 'name email');
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'No project found for this student'
+      });
+    }
+
+    // Check authorization
+    const isAuthorized =
+      project.student._id.toString() === req.user.id ||
+      (project.supervisor && project.supervisor._id.toString() === req.user.id) ||
+      req.user.role === 'admin' ||
+      req.user.role === 'teacher';
+
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this project'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      project
+    });
+
+  } catch (error) {
+    console.error('Get project error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error fetching project',
+      error: error.message
+    });
+  }
+}
+
 
 // ==================== TEACHER CONTROLLERS ====================
 
@@ -829,3 +876,192 @@ export const getRejectedProjects = async (req, res) => {
   }
 };
 
+
+export const uploadProjectVideo = async (req,res) =>{
+  try {
+    const {projectId} = req.body;
+    const videoFile = req.file;
+    if(!videoFile){
+      return res.status(400).json({
+        success:false,
+        message:"No Video File Uploaded!"
+      });
+    }
+
+    const maxSize = 100*1024*1024;
+    if(videoFile.size > maxSize){
+      fs.unlinkSync(videoFile.path)
+      return res.status(400).json({
+        success:false,
+        message:"Video size too large. Maximum size is 100MB(approx 5 min long)"
+      });
+    }
+    const allowedType = ['video/mp4','video/webm','video/quicktime'];
+    if(!allowedType.includes(videoFile.mimetype)){
+      fs.unlinkSync(videoFile.path);
+      return res.status(400).json({
+        success:false,
+        message:"Invalid video format."
+      })
+    } 
+
+    const project = await Project.findById(projectId);
+    if (!project) {
+      fs.unlinkSync(videoFile.path);
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+
+    // If project already has a video, delete it from Cloudinary first
+    if (project.videoPublicId) {
+      try {
+        await cloudinary.uploader.destroy(project.videoPublicId, {
+          resource_type: 'video'
+        });
+      } catch (deleteError) {
+        console.error('Error deleting old video:', deleteError);
+        // Continue with upload even if old video deletion fails
+      }
+    }
+
+    const result = await cloudinary.uploader.upload(videoFile.path, {
+      resource_type: 'video',
+      folder: 'project_videos',
+      chunk_size: 6000000, // 6MB chunks for large files
+      eager: [
+        { width: 300, height: 300, crop: "pad", audio_codec: "none" },
+        { width: 160, height: 100, crop: "crop", gravity: "south", audio_codec: "none" }
+      ],
+      eager_async: true
+    });
+
+    // Delete the temporary file
+    fs.unlinkSync(videoFile.path);
+
+    // Update project with video URL
+    project.projectVideo = result.secure_url;
+    project.videoPublicId = result.public_id;
+    await project.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Video uploaded successfully!",
+      videoUrl: result.secure_url
+    });
+  } catch (error) {
+    console.error("Video uploaded Error",error);
+    if(req.file && req.file.path){
+      fs.unlinkSync(req.file.path);
+    }
+
+    res.status(500).json({
+      success:false,
+      message:"Error while uploaded video",
+      error:error.message
+    })
+  }
+}
+
+export const updateGithubRepo = async(req,res) =>{
+  try {
+    const { projectId } = req.params;
+    const { githubRepo } = req.body;
+    if (!githubRepo) {
+      return res.status(400).json({
+        success: false,
+        message: 'GitHub repository URL is required'
+      });
+    }
+    // Validate GitHub URL
+    const githubRegex = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w-]+/;
+    if (!githubRegex.test(githubRepo)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid GitHub repository URL (e.g., https://github.com/username/repo)'
+      });
+    }
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+    project.githubRepo = githubRepo;
+    await project.save();
+
+    // Populate for response
+    await project.populate('student', 'name email stdId');
+    await project.populate('supervisor', 'name email');
+    res.status(200).json({
+      success: true,
+      message: 'GitHub repository URL saved successfully',
+      project
+    });
+
+  } catch (error) {
+    console.error('GitHub repo update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error Saving GitHub repository',
+      error: error.message
+    });
+  }
+}
+// Get project resources (including GitHub URL for viewing)
+export const getProjectResources = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const project = await Project.findById(projectId)
+      .populate('student', 'name email stdId')
+      .populate('supervisor', 'name email');
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+
+    // Check authorization
+    const isAuthorized =
+      project.student._id.toString() === req.user.id ||
+      (project.supervisor && project.supervisor._id.toString() === req.user.id) ||
+      req.user.role === 'admin' ||
+      req.user.role === 'teacher'; // Teachers can view too
+
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view these resources'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      resources: {
+        document: project.document,
+        githubRepo: project.githubRepo, // Just the URL for viewing
+        projectVideo: project.projectVideo,
+        title: project.title,
+        description: project.description,
+        status: project.status,
+        supervisor: project.supervisor,
+        student: project.student,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Get resources error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching resources',
+      error: error.message
+    });
+  }
+};

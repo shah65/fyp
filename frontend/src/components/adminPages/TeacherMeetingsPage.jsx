@@ -46,7 +46,7 @@ const TeacherMeetings = () => {
   const fetchGroups = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await api.get('/teacher/groups', {
+      const response = await api.get('/api/teacher/groups', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setGroups(response.data.groups || []);
@@ -73,9 +73,7 @@ const TeacherMeetings = () => {
   const handleStartMeeting = async (meetingId) => {
     try {
       const token = localStorage.getItem('token');
-      await api.patch(`/api/teacher/meetings/${meetingId}/start`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.patch(`/api/teacher/meetings/${meetingId}/start`, {}, );
       fetchMeetings();
     } catch (error) {
       console.error('Error starting meeting:', error);

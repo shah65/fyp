@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser';
 import connectionDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import teacherR from './routes/teacher.route.js';
+import projectRoutes from './routes/projectRoutes.js'
 import meetingRoute from './routes/meetingRoute.js'
 
 dotenv.config();
@@ -16,10 +17,17 @@ connectionDB();
 
 const app = express();
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+// More permissive CORS for development
+const corsOptions = {
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions))
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -30,6 +38,7 @@ app.use("/uploads", express.static("uploads"));
 app.use("/student", authRoutes);
 app.use('/group', groupRoute);
 app.use('/teacher', teacherR);
+app.use('/api/student',projectRoutes)
 app.use('/api', meetingRoute); // Add meeting routes
 
 const server = http.createServer(app);
@@ -70,6 +79,4 @@ app.set('io', io);
 
 server.listen(4002, () => {
   console.log("Server running at 4002 Successfully");
-  console.log('Gemini API Key exists:', !!process.env.GEMINI_API_KEY); // Should print true
-  console.log('Gemini API Key prefix:', process.env.GEMINI_API_KEY?.substring(0, 15)); // Should start with 'sk-'
-});
+})

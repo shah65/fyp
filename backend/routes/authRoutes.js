@@ -1,7 +1,7 @@
 import express from 'express'
 import { upload } from '../middleware/Multer.js';
-import { uploadProjectDocument, requestApproval, getMyProject, addProjectFeedback } from '../controllers/ProjectController.js';
-import {register,login, me,logout} from '../controllers/authController.js'
+import { uploadProjectDocument, requestApproval, getMyProject } from '../controllers/ProjectController.js';
+import { register,uploadProfileImage,login, me,logout} from '../controllers/authController.js'
 import authMiddleware from '../middleware/authMiddleware.js';
  
 const router = express.Router();
@@ -28,7 +28,7 @@ router.post('/upload-document',
 router.post('/request-approval', authMiddleware, requestApproval);
 router.get('/project/:id', authMiddleware, getMyProject);
 
-router.post('/project/:projectId/feedback',authMiddleware, addProjectFeedback);
+router.post('/upload-profile-image', authMiddleware, upload.memberImage, uploadProfileImage);
 
 router.get('/me',authMiddleware,me)
 router.post('/logout',logout)

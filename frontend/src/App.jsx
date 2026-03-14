@@ -23,6 +23,7 @@ import TeacherMeetingsPage from './components/adminPages/TeacherMeetingsPage';
 import StudentMeetingsPage from './components/pages/StudentMeetingPage';
 import MeetingRoomPage from './components/meeting/MeetingRoom';
 import LandingPage from './components/pages/LandingPage';
+import Guest from './components/guest/Guest';
 
  
 
@@ -34,6 +35,7 @@ const App = () => {
         <Router>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/guest" element={<Guest />} />
            
             {/* ── Student routes ───────────────────────────────── */}
             <Route
