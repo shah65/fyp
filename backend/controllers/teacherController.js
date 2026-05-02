@@ -43,7 +43,9 @@ export const getTeacherGroups = async (req, res) => {
       .populate('leader', 'name email stdId')
       .lean();
 
-    res.json({ success: true, groups });
+      res.json({ success: true, groups });
+    console.log("This is groups to assing techers", groups)
+
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

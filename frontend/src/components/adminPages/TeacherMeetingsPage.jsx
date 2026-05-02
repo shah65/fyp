@@ -46,9 +46,8 @@ const TeacherMeetings = () => {
   const fetchGroups = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await api.get('/api/teacher/groups', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/api/teacher/groups',  
+      );
       setGroups(response.data.groups || []);
     } catch (error) {
       console.error('Error fetching groups:', error);
@@ -293,7 +292,7 @@ const TeacherMeetings = () => {
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-purple-500/20"
+              className="flex items-center gap-2 bg-linear-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-purple-500/20"
             >
               <Plus size={20} />
               Schedule Meeting

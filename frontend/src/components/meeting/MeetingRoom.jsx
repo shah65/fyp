@@ -299,7 +299,7 @@ const MeetingRoom = () => {
             <p className="text-white/60 mb-8">{error}</p>
             <button
               onClick={() => navigate(-1)}
-              className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300"
+              className="w-full py-4 bg-linear-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300"
             >
               Go Back
             </button>
@@ -331,7 +331,7 @@ const MeetingRoom = () => {
       {notification && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-slideDown">
           <div className={`glass-card-dark rounded-xl px-6 py-4 border ${notification.type === 'success' ? 'border-green-500/30' : 'border-blue-500/30'
-            } flex items-center gap-3 min-w-[300px]`}>
+            } flex items-center gap-3 min-w-75`}>
             <notification.icon className={`w-5 h-5 ${notification.type === 'success' ? 'text-green-400' : 'text-blue-400'
               }`} />
             <p className="text-white flex-1">{notification.message}</p>
@@ -421,12 +421,12 @@ const MeetingRoom = () => {
 
               {/* Countdown Timer for Scheduled Meetings */}
               {meeting.status === 'scheduled' && countdown && (
-                <div className="glass-card-light p-6 rounded-2xl text-center min-w-[200px]">
+                <div className="glass-card-light p-6 rounded-2xl text-center min-w-50">
                   <p className="text-white/60 text-sm mb-2 flex items-center justify-center gap-2">
                     <Clock size={14} />
                     Meeting starts in
                   </p>
-                  <p className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
+                  <p className="text-3xl font-bold text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-400">
                     {countdown}
                   </p>
                   <p className="text-white/40 text-xs mt-2">
@@ -449,7 +449,7 @@ const MeetingRoom = () => {
               <div className="space-y-4">
                 {/* Teacher Info */}
                 <div className="flex items-start gap-4 p-4 glass-card-light rounded-xl">
-                  <div className="bg-gradient-to-br from-purple-500 to-blue-500 p-3 rounded-xl">
+                  <div className="bg-linear-to-br from-purple-500 to-blue-500 p-3 rounded-xl">
                     <User className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
@@ -461,7 +461,7 @@ const MeetingRoom = () => {
 
                 {/* Group Info */}
                 <div className="flex items-start gap-4 p-4 glass-card-light rounded-xl">
-                  <div className="bg-gradient-to-br from-green-500 to-emerald-500 p-3 rounded-xl">
+                  <div className="bg-linear-to-br from-green-500 to-emerald-500 p-3 rounded-xl">
                     <Users className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
@@ -473,7 +473,7 @@ const MeetingRoom = () => {
                           {meeting.group.members.slice(0, 3).map((member, idx) => (
                             <div
                               key={idx}
-                              className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 border-2 border-white/20 flex items-center justify-center"
+                              className="w-8 h-8 rounded-full bg-linear-to-br from-purple-500 to-blue-500 border-2 border-white/20 flex items-center justify-center"
                             >
                               <span className="text-white text-xs font-bold">
                                 {member.name?.charAt(0) || 'M'}
@@ -574,7 +574,7 @@ const MeetingRoom = () => {
 
                   <button
                     onClick={handleJoinMeeting}
-                    className="w-full py-5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 font-semibold text-lg flex items-center justify-center gap-3 group"
+                    className="w-full py-5 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 font-semibold text-lg flex items-center justify-center gap-3 group"
                   >
                     <Video size={24} className="group-hover:scale-110 transition-transform" />
                     Join Meeting Now
@@ -597,7 +597,7 @@ const MeetingRoom = () => {
                     {meeting.scheduledAt && (
                       <div className="w-full bg-white/10 rounded-full h-2 mb-4">
                         <div
-                          className="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-1000"
+                          className="bg-linear-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-1000"
                           style={{
                             width: `${Math.min(100, (new Date() - new Date(meeting.scheduledAt)) / (1000 * 60 * 60) * 100)}%`
                           }}

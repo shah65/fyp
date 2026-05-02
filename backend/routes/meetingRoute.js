@@ -15,13 +15,13 @@ import {
 } from "../controllers/mettingController.js";
 import  verifyToken  from "../middleware/authMiddleware.js";
 import verifyTeacher from '../middleware/authorizeTeacher.js';
-import getMyStudents from '../controllers/teacherController.js';
+import { getTeacherGroups } from '../controllers/teacherController.js';
 const router = express.Router();
 
 // ── Teacher routes ─────────────────────────────────────────────────────────────
 router.post('/teacher/meetings', verifyTeacher, createMeeting);
 router.get('/teacher/meetings', verifyTeacher, getTeacherMeetings);
-router.get('/teacher/groups', verifyTeacher, getMyStudents);
+router.get('/teacher/groups', verifyTeacher, getTeacherGroups);
 router.get('/teacher/meetings/:meetingId', verifyTeacher, getMeetingDetail);
 router.patch('/teacher/meetings/:meetingId/start', verifyTeacher, startMeeting);
 router.patch('/teacher/meetings/:meetingId/end', verifyTeacher, endMeeting);

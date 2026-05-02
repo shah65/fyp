@@ -24,6 +24,7 @@ import StudentMeetingsPage from './components/pages/StudentMeetingPage';
 import MeetingRoomPage from './components/meeting/MeetingRoom';
 import LandingPage from './components/pages/LandingPage';
 import Guest from './components/guest/Guest';
+import TeacherStudent from './components/adminPages/TeacherStudent';
 
  
 
@@ -99,6 +100,13 @@ const App = () => {
             <Route path="/teacher/meetings" element={
               <ProtectedRoute allowedRoles={['teacher']}>
                 <TeacherMeetingsPage />
+              </ProtectedRoute>
+            } />
+            {/* Teacher student — page*/}
+
+            <Route path="/teacher/meetings" element={
+              <ProtectedRoute allowedRoles={['teacher']}>
+                <TeacherStudent />
               </ProtectedRoute>
             } />
             {/* ── Shared meeting room (teacher + student) ──────── */}

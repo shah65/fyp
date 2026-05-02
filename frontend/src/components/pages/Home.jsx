@@ -249,7 +249,7 @@ const Home = () => {
               <div className="w-125 bg-white/15 backdrop-blur-lg hover:backdrop-blur-[6px] border border-white/30 shadow-[0_20px_40px_rgba(247,247,247,0.35)] rounded-2xl flex items-center gap-8 px-10 py-8 transition-all duration-300 hover:bg-white/20 hover:-translate-y-3">
                 <div className="relative">
                   <img
-                    src={imagePreview || hil}
+                    src={imagePreview }
                     className="w-44 h-44 rounded-2xl border border-white object-cover"
                     alt="Student"
                   />
