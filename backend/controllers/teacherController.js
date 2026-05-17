@@ -4,7 +4,9 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Project from '../models/ProjectModel.js';
- 
+import { getIO } from '../utils/socketUtil.js';
+import { sendEmail } from '../utils/emailUtil.js';
+import fabricService from '../services/fabricService.js';
 // Get teacher profile details
 export const getTeacherProfile = async (req, res) => {
   try {
@@ -138,25 +140,48 @@ export const getMyStudents = async (req, res) => {
       .populate('leader', 'name email stdId department semester')
       .lean();
 
-    const leaderEmails = groups.map(g => g.leader?.email).filter(email => email);
-    const memberEmails = groups.flatMap(g => g.members.map(m => m.email));
-    const allEmails = [...new Set([...leaderEmails, ...memberEmails])];
+    // Build response with groups, leader, and members (including roles)
+    const groupsData = groups.map(group => ({
+      _id: group._id,
+      groupName: group.groupName,
+      status: group.status,
+      leader: {
+        name: group.leader?.name,
+        email: group.leader?.email,
+        stdId: group.leader?.stdId,
+        department: group.leader?.department,
+        semester: group.leader?.semester,
+        role: 'leader'   // explicit role for leader
+      },
+      members: group.members.map(m => ({
+        name: m.name,
+        email: m.email,
+        studentId: m.rollNumber,
+        role: m.role   // 'co-ordinator', 'member', or 'leader' (but leader handled separately)
+      }))
+    }));
 
-    const students = await User.find({ email: { $in: allEmails } })
+    // Optionally, also return a flattened list of all unique students (for backward compatibility)
+    const allEmails = groups.flatMap(g => [
+      g.leader?.email,
+      ...g.members.map(m => m.email)
+    ]).filter(Boolean);
+    const uniqueEmails = [...new Set(allEmails)];
+    const students = await User.find({ email: { $in: uniqueEmails } })
       .select('-password')
       .lean();
 
     res.json({
       success: true,
       count: students.length,
-      students
+      students,                // flattened list (old format)
+      groups: groupsData       // new structured format with group context
     });
   } catch (error) {
     console.error('Error in getMyStudents:', error);
     res.status(500).json({ message: error.message });
   }
 };
-
 // Dashboard stats
 export const getDashboardStats = async (req, res) => {
   try {
@@ -316,3 +341,61 @@ export const teacherLogout = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Helper: generate a human‑readable password (adjective + noun + 3 digits)
+function generateReadablePassword(){
+  const adjectives = ['Happy', 'Brave', 'Calm', 'Eager', 'Kind', 'Wise', 'Bold', 'Swift', 'Lucky', 'Clever'];
+  const nouns = ['Sunset', 'Tiger', 'Eagle', 'Forest', 'Ocean', 'Mountain', 'Star', 'Flower', 'Breeze', 'Panda'];
+  const randomNum = Math.floor(Math.random()*900+100);
+  const adj = adjectives[Math.floor(Math.random()*adjectives.length)];
+  const noun = nouns[Math.floor(Math.random( )* nouns.length)];
+  return `${adj}${noun}${randomNum}`}
+//creatingStudent
+export const createStudentAccount = async  (req,res) =>{
+  try {
+    const {name,email,stdId,subject,department,semester} = req.body;
+    const existingEmail = await User.findOne({ email });
+
+    if (existingEmail) {
+      return res.status(409).json({
+        success: false,
+        field: 'email',
+        message: 'Email already exists'
+      });
+    }
+
+    const existingStdId = await User.findOne({ stdId });
+
+    if (existingStdId) {
+      return res.status(409).json({
+        success: false,
+        field: 'stdId',
+        message: 'Student ID already exists'
+      });
+    }
+
+    // Generate a human‑readable password
+    const readablePassword = generateReadablePassword();
+
+    const hashed = await bcrypt.hash(readablePassword,12);
+    const student = await User.create({
+      name, email, password: hashed, stdId, subject, department,semester,role:'student',
+      supervisor:req.user._id
+    });
+    // Store on blockchain
+    const teacherId = req.user._id.toString();
+    await fabricService.registerStudentOnChain(stdId, name, email, teacherId, semester, department, subject);
+ 
+    // Send email with the *readable* password (not the hash)
+    await sendEmail(email, "Your Account Credential", `Email: ${email}\nPassword: ${readablePassword}\nSuperVisor: ${req.user.name}\nSupervisorId: ${teacherId}`);
+
+    //realtime notification
+    const io = getIO();
+    io.to(req.user.id.toString()).emit('student-created', { studentId: student._id, name:student.name });
+    res.status(201).json({ message: 'Student account created', student });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+
+  }
+}

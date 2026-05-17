@@ -1,7 +1,6 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import Login from './components/pages/Login';
 import Resources from './components/pages/Resources';
-import Singup from './components/pages/Singup';
 import Layout from './components/pages/Layout'
 import Home from './components/pages/Home';
 import AuthProvider from './components/context/AuthProvider';
@@ -14,9 +13,11 @@ import TeacherHome from './components/adminPages/TeacherHome';
 import Setting from './components/pages/Setting';
 import TeacherSetting from './components/adminPages/TeacherSetting';
 import TeacherPendingRequests from './components/adminPages/TeacherPendingRequest';
-import TeacherApprovedProjects from './components/adminPages/TeacherApprovedProjects';
+ import TeacherApprovedProjects from './components/adminPages/TeacherApprovedProjects';
 import TeacherRejectedPage from './components/adminPages/TeacherRejectedPage';
  
+import { Toaster } from 'react-hot-toast';
+
 
 // ── Meeting pages ──────────────────────────────────────────────
 import TeacherMeetingsPage from './components/adminPages/TeacherMeetingsPage';
@@ -32,11 +33,16 @@ const App = () => {
   
  
     return (
+      <> 
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+        />
       <AuthProvider>
         <Router>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/guest" element={<Guest />} />
+            <Route path="/guest/*" element={<Guest />} />
            
             {/* ── Student routes ───────────────────────────────── */}
             <Route
@@ -96,6 +102,7 @@ const App = () => {
             <Route path="/teacher/pending-request" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherPendingRequests /></ProtectedRoute>} />
             <Route path="/teacher/approved-projects" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherApprovedProjects /></ProtectedRoute>} />
             <Route path="/teacher/rejected-project" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherRejectedPage /></ProtectedRoute>} />
+            <Route path="/teacher/students" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherStudent /></ProtectedRoute>} />
             {/* Teacher meetings — full control dashboard */}
             <Route path="/teacher/meetings" element={
               <ProtectedRoute allowedRoles={['teacher']}>
@@ -118,14 +125,14 @@ const App = () => {
             } />
 
             {/* ── Auth routes ──────────────────────────────────── */}
-            <Route path="/register" element={<Singup />} />
-            <Route path="/login" element={<Login />} />
+             <Route path="/login" element={<Login />} />
             <Route path="/teacherlogin" element={<TeacherLoginPage />} />
             <Route path="/teacher/signup" element={<TeacherSignup />} />
 
           </Routes>
         </Router>
       </AuthProvider>
+      </>
     );
 };
 

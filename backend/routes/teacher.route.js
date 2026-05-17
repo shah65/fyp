@@ -17,7 +17,8 @@ import {
   getTeacherProfile,
   getTeacherGroups,
   uploadProfileImage,
-  teacherLogout
+  teacherLogout,
+  createStudentAccount
 } from '../controllers/teacherController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import authorizeTeacher from '../middleware/authorizeTeacher.js';
@@ -72,5 +73,7 @@ router.post('/project/:projectId/feedback', addProjectFeedback);
 
 // Logout route
 router.post('/logout', teacherLogout);
+//creating student 
+router.post('/create-student' ,createStudentAccount);
 
 export default router;

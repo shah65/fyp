@@ -1,0 +1,175 @@
+# Copyright IBM Corp. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+---
+################################################################################
+#
+#   Section: Organizations
+#
+################################################################################
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/awkum.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    OrdererEndpoints:
+      - orderer.awkum.com:7050
+
+  - &StudentOrg
+    Name: StudentOrgMSP
+    ID: StudentOrgMSP
+    MSPDir: ../organizations/peerOrganizations/student.awkum.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('StudentOrgMSP.admin', 'StudentOrgMSP.peer', 'StudentOrgMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('StudentOrgMSP.admin', 'StudentOrgMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('StudentOrgMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('StudentOrgMSP.peer')"
+
+  - &TeacherOrg
+    Name: TeacherOrgMSP
+    ID: TeacherOrgMSP
+    MSPDir: ../organizations/peerOrganizations/teacher.awkum.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('TeacherOrgMSP.admin', 'TeacherOrgMSP.peer', 'TeacherOrgMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('TeacherOrgMSP.admin', 'TeacherOrgMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('TeacherOrgMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('TeacherOrgMSP.peer')"
+
+################################################################################
+#
+#   SECTION: Capabilities
+#
+################################################################################
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_5: true
+
+################################################################################
+#
+#   SECTION: Application
+#
+################################################################################
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+################################################################################
+#
+#   SECTION: Orderer
+#
+################################################################################
+Orderer: &OrdererDefaults
+  Addresses:
+    - orderer.awkum.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+################################################################################
+#
+#   CHANNEL
+#
+################################################################################
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+################################################################################
+#
+#   Profile
+#
+################################################################################
+Profiles:
+  AwkumChannelUsingRaft:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      OrdererType: etcdraft
+      EtcdRaft:
+        Consenters:
+          - Host: orderer.awkum.com
+            Port: 7050
+            ClientTLSCert: ../organizations/ordererOrganizations/awkum.com/orderers/orderer.awkum.com/tls/server.crt
+            ServerTLSCert: ../organizations/ordererOrganizations/awkum.com/orderers/orderer.awkum.com/tls/server.crt
+      Organizations:
+        - *OrdererOrg
+      Capabilities: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *StudentOrg
+        - *TeacherOrg
+      Capabilities: *ApplicationCapabilities

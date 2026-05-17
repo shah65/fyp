@@ -11,6 +11,8 @@ import authRoutes from './routes/authRoutes.js';
 import teacherR from './routes/teacher.route.js';
 import projectRoutes from './routes/projectRoutes.js'
 import meetingRoute from './routes/meetingRoute.js'
+import { setIO } from './utils/socketUtil.js';
+import blockchainRoutes from './routes/blockchainRoute.js'
 
 dotenv.config();
 connectionDB();
@@ -40,6 +42,7 @@ app.use('/group', groupRoute);
 app.use('/teacher', teacherR);
 app.use('/api/student',projectRoutes)
 app.use('/api', meetingRoute); // Add meeting routes
+app.use('/api/blockchain', blockchainRoutes);
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -48,6 +51,9 @@ const io = new Server(server, {
     credentials: true
   }
 });
+
+// Set the io instance in the utility
+setIO(io);
 
 // Socket.io authentication middleware (using JWT, matching your login system)
 io.use((socket, next) => {

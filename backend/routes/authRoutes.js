@@ -1,12 +1,12 @@
 import express from 'express'
 import { upload } from '../middleware/Multer.js';
 import { uploadProjectDocument, requestApproval, getMyProject } from '../controllers/ProjectController.js';
-import { register,uploadProfileImage,login, me,logout} from '../controllers/authController.js'
+import { uploadProfileImage,login, me,logout} from '../controllers/authController.js'
 import authMiddleware from '../middleware/authMiddleware.js';
  
 const router = express.Router();
 
-router.post('/signup',register);
+//router.post('/signup',register);
 router.post('/login',login);
 router.post('/upload-document',
   authMiddleware,

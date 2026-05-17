@@ -52,11 +52,9 @@ const Login = () => {
 
     } catch (error) {
       console.error('Login error:', error);
-      if (error.response && error.response.status === 401) {
-        alert("Password Incorrect");
-      } else {
-        alert(error.response?.data?.message || "Login failed");
-      }
+      alert(error.response?.data?.message || "Login failed");
+
+    
     }
   };
 
@@ -106,17 +104,7 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <p className="text-gray-600">
-            Don't have an account?{' '}
-            <button
-              onClick={() => navigate("/register")}
-              className="text-blue-600 hover:underline"
-            >
-              Register
-            </button>
-          </p>
-        </div>
+        
       </div>
     </div>
   );

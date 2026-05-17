@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ProjectDetailsModal from './ProjectDetailsModel';
 import api from '../../api/Api';
 import TeacherNavbar from './TeacherNavbar';
 import awkumimg from '../../public/awkumimg1.png';
+import toast from 'react-hot-toast'; // NEW: for notifications
+import io from 'socket.io-client';
+
 
 const TeacherHome = () => {
   const [stats, setStats] = useState(null);
@@ -13,11 +16,25 @@ const TeacherHome = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const socketRef = useRef(null);
 
+
+  // NEW: state for Create Student modal
+  const [showCreateStudentModal, setShowCreateStudentModal] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    stdId: '',
+    subject: '',
+    department: '',
+    semester: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  // Fetch dashboard data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch dashboard stats and teacher data
         const [statsRes, teacherRes] = await Promise.all([
           api.get('/teacher/dashboard'),
           api.get('/teacher/profile')
@@ -26,16 +43,73 @@ const TeacherHome = () => {
         setTeacher(teacherRes.data.teacher);
       } catch (err) {
         console.error(err);
+        toast.error('Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
+  useEffect(() => {
+    // Only connect if teacher is loaded (meaning user is authenticated)
+    if (teacher && !socketRef.current) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No token found, cannot connect socket');
+        return;
+      }
+      const socket = io('http://localhost:4002', {
+        auth: { token },
+        transports: ['websocket'],
+      });
+      socket.on('connect', () => {
+        console.log('Socket connected');
+      });
+      socket.on('student-created', (data) => {
+        console.log("EVENT RECIEVED!",data);
+        toast.success(`🎉 New student created: ${data.name}`);
+     
+      });
+      socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+      });
+      socketRef.current = socket;
+    }
+    // Cleanup on unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [teacher]); // Re-run when teacher data is loaded
+  // Handlers for Create Student form
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateStudent = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await api.post('/teacher/create-student', formData);
+      // Emit socket event for new student creation
+      toast.success('Student account created successfully! Email sent.');
+      setShowCreateStudentModal(false);
+      setFormData({ name: '', email: '', stdId: '', subject: '', department: '', semester: '' });
+      // Optionally refresh stats – not necessary for now
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Failed to create student';
+      toast.error(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleViewProject = (project) => {
-    console.log('Viewing project:', project); // Debug log
+    console.log('Viewing project:', project);
     setSelectedProject(project);
     setShowProjectModal(true);
   };
@@ -43,18 +117,18 @@ const TeacherHome = () => {
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
-    const formData = new FormData();
-    formData.append('profileImage', file);
-
+    const uploadFormData = new FormData();
+    uploadFormData.append('profileImage', file);
     setUploadingImage(true);
     try {
-      const res = await api.post('/teacher/profile/image', formData, {
+      const res = await api.post('/teacher/profile/image', uploadFormData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setTeacher(prev => ({ ...prev, profileImage: res.data.imageUrl }));
+      toast.success('Profile image updated');
     } catch (err) {
       console.error('Error uploading image:', err);
+      toast.error('Failed to upload image');
     } finally {
       setUploadingImage(false);
     }
@@ -64,7 +138,6 @@ const TeacherHome = () => {
     ? stats?.recentProjects
     : stats?.recentProjects?.slice(0, 2);
 
-  // Get status color for project badge
   const getStatusColor = (status) => {
     switch (status) {
       case 'approved': return 'text-green-400 bg-green-500/10 border-green-500/30';
@@ -73,7 +146,6 @@ const TeacherHome = () => {
     }
   };
 
-  // Loading animation with glass effect
   if (loading) {
     return (
       <>
@@ -82,7 +154,7 @@ const TeacherHome = () => {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: `url(${awkumimg})`, // FIXED: Added url() wrapper
+              backgroundImage: `url(${awkumimg})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
@@ -121,7 +193,7 @@ const TeacherHome = () => {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: `url(${awkumimg})`, // FIXED: Added url() wrapper
+              backgroundImage: `url(${awkumimg})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'
@@ -200,7 +272,7 @@ const TeacherHome = () => {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url(${awkumimg})`, // FIXED: Correct syntax
+            backgroundImage: `url(${awkumimg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
@@ -230,7 +302,7 @@ const TeacherHome = () => {
               {/* Image Upload */}
               <div className="flex flex-col items-center">
                 <div className="relative group">
-                  <div className="w-32 h-32 rounded-full bg-linear-to-br from-purple-500 to-pink-500 p-1"> {/* FIXED: bg-gradient instead of bg-linear */}
+                  <div className="w-32 h-32 rounded-full bg-linear-to-br from-purple-500 to-pink-500 p-1">
                     <div className="w-full h-full rounded-full bg-gray-900 overflow-hidden">
                       {teacher.profileImage ? (
                         <img
@@ -239,7 +311,7 @@ const TeacherHome = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900 to-pink-900"> {/* FIXED: bg-gradient */}
+                        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-purple-900 to-pink-900">
                           <span className="text-4xl text-white font-bold">
                             {teacher.name?.charAt(0).toUpperCase()}
                           </span>
@@ -336,10 +408,109 @@ const TeacherHome = () => {
                 </div>
               </div>
 
-              <button className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all"> {/* FIXED: bg-gradient */}
+              <button className="w-full px-6 py-3 bg-linear-to-r from-purple-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all">
                 Save Changes
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Create Student Modal */}
+      {showCreateStudentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateStudentModal(false)}></div>
+          <div className="relative glass-card-dark rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto animate-slide-up">
+            <button
+              onClick={() => setShowCreateStudentModal(false)}
+              className="absolute top-4 right-4 text-white/60 hover:text-white"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h2 className="text-2xl font-bold text-white mb-6">Create Student Account</h2>
+            <form onSubmit={handleCreateStudent} className="space-y-4">
+              <div>
+                <label className="text-white/80 text-sm block mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-purple-500 outline-none"
+                  placeholder="Student full name"
+                />
+              </div>
+              <div>
+                <label className="text-white/80 text-sm block mb-1">Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-purple-500 outline-none"
+                  placeholder="student@example.com"
+                />
+              </div>
+              <div>
+                <label className="text-white/80 text-sm block mb-1">Student ID *</label>
+                <input
+                  type="text"
+                  name="stdId"
+                  required
+                  value={formData.stdId}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-purple-500 outline-none"
+                  placeholder="e.g., CS2024001"
+                />
+              </div>
+              <div>
+                <label className="text-white/80 text-sm block mb-1">Subject *</label>
+                <input
+                  type="text"
+                  name="subject"
+                  required
+                  value={formData.subject}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-purple-500 outline-none"
+                  placeholder="e.g., Computer Science"
+                />
+              </div>
+              <div>
+                <label className="text-white/80 text-sm block mb-1">Department *</label>
+                <input
+                  type="text"
+                  name="department"
+                  required
+                  value={formData.department}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-purple-500 outline-none"
+                  placeholder="e.g., CS"
+                />
+              </div>
+              <div>
+                <label className="text-white/80 text-sm block mb-1">Semester *</label>
+                <input
+                  type="text"
+                  name="semester"
+                  required
+                  value={formData.semester}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-purple-500 outline-none"
+                  placeholder="e.g., 3"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full px-6 py-3 bg-linear-to-r from-purple-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Creating...' : 'Create Student'}
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -351,7 +522,7 @@ const TeacherHome = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* Profile Image */}
             <div className="relative group">
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-1"> {/* FIXED: bg-gradient */}
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-linear-to-br from-purple-500 to-pink-500 p-1">
                 <div className="w-full h-full rounded-full bg-gray-900 overflow-hidden">
                   {teacher.profileImage ? (
                     <img
@@ -360,7 +531,7 @@ const TeacherHome = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900 to-pink-900"> {/* FIXED: bg-gradient */}
+                    <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-purple-900 to-pink-900">
                       <span className="text-2xl md:text-3xl text-white font-bold">
                         {teacher.name?.charAt(0).toUpperCase()}
                       </span>
@@ -394,10 +565,22 @@ const TeacherHome = () => {
                     </span>
                   </div>
                 </div>
-                <span className="text-sm font-light text-white/60 animate-pulse flex items-center gap-2">
-                  Live
-                  <span className="inline-block h-2 w-2 rounded-full bg-green-400"></span>
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-light text-white/60 animate-pulse flex items-center gap-2">
+                    Live
+                    <span className="inline-block h-2 w-2 rounded-full bg-green-400"></span>
+                  </span>
+                  {/* NEW: Create Student Button */}
+                  <button
+                    onClick={() => setShowCreateStudentModal(true)}
+                    className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-300 text-sm font-medium transition-all flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Create Student
+                  </button>
+                </div>
               </div>
 
               {/* Contact Info */}
@@ -438,7 +621,7 @@ const TeacherHome = () => {
                 transform transition-all duration-300 hover:scale-105 hover:-translate-y-1
                 hover:shadow-2xl hover:shadow-purple-500/20
               `}>
-                <div className={`absolute inset-0 bg-linear-to-br ${card.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`}></div> {/* FIXED: bg-gradient */}
+                <div className={`absolute inset-0 bg-linear-to-br ${card.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`}></div>
                 <div className="relative z-10">
                   <div className="flex items-start justify-between">
                     <div>
@@ -457,7 +640,7 @@ const TeacherHome = () => {
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-xs text-white/40">
                     <span className="inline-block h-1 w-12 bg-white/10 rounded-full overflow-hidden">
-                      <span className={`block h-full w-3/4 bg-gradient-to-r ${card.color} rounded-full`}></span> {/* FIXED: bg-gradient */}
+                      <span className={`block h-full w-3/4 bg-linear-to-r ${card.color} rounded-full`}></span>
                     </span>
                     <span>Updated just now</span>
                   </div>
@@ -480,7 +663,6 @@ const TeacherHome = () => {
               <span className="text-white/40 text-sm">
                 {stats.recentProjects?.length || 0} total projects
               </span>
-              {/* ADDED BACK: View All button */}
               {stats.recentProjects?.length > 2 && (
                 <button
                   onClick={() => setShowAllProjects(!showAllProjects)}
@@ -522,7 +704,6 @@ const TeacherHome = () => {
                           <h2 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors duration-300">
                             {proj.title}
                           </h2>
-                          {/* ADDED: Status badge in project list */}
                           <span className={`text-xs px-2 py-1 rounded-full border ${getStatusColor(proj.status)}`}>
                             {proj.status || 'pending'}
                           </span>
@@ -547,8 +728,8 @@ const TeacherHome = () => {
                           {proj.technology || 'Not specified'}
                         </span>
                         <button
-                                                  onClick={() => {
-                            console.log('Project clicked:', proj); // Debug log
+                          onClick={() => {
+                            console.log('Project clicked:', proj);
                             if (proj && proj._id) {
                               handleViewProject(proj);
                             } else {
@@ -564,7 +745,7 @@ const TeacherHome = () => {
                       </div>
                     </div>
                     <div className="mt-3 w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full w-2/3 bg-linear-to-r from-purple-500 to-pink-500 rounded-full group-hover:w-3/4 transition-all duration-500"></div> {/* FIXED: bg-gradient */}
+                      <div className="h-full w-2/3 bg-linear-to-r from-purple-500 to-pink-500 rounded-full group-hover:w-3/4 transition-all duration-500"></div>
                     </div>
                   </div>
                 </div>
@@ -572,7 +753,6 @@ const TeacherHome = () => {
             </div>
           )}
 
-          {/* Show More/Less indicator */}
           {stats.recentProjects?.length > 2 && (
             <div className="mt-6 text-center">
               <button
@@ -603,9 +783,7 @@ const TeacherHome = () => {
             setSelectedProject(null);
           }}
           onStatusUpdate={(newStatus) => {
-            // Update the project status in the list if needed
             console.log('Status updated to:', newStatus);
-            // You can refresh the projects list here
           }}
         />
       )}
@@ -613,7 +791,6 @@ const TeacherHome = () => {
   );
 };
 
-// Styles remain the same
 const styles = `
   .glass-card-dark {
     background: rgba(17, 25, 40, 0.75);
@@ -669,7 +846,6 @@ const styles = `
   }
 `;
 
-// Add styles to document
 if (typeof document !== 'undefined') {
   const styleSheet = document.createElement("style");
   styleSheet.textContent = styles;

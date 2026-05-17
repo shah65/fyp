@@ -9,7 +9,7 @@ import bcrypt from 'bcrypt'; // Added for hashing approval codes
 import  cloudinary from '../config/cloudinary.js';
 import fs from 'fs';
 import path from 'path'
-
+import fabricService from '../services/fabricService.js'
 
 // ==================== STUDENT CONTROLLERS ====================
 /*
@@ -183,13 +183,62 @@ export const uploadProjectDocument = async (req, res) => {
       status: "approved"
     });
 
+ 
     // Update student with project and supervisor
-    await User.findByIdAndUpdate(studentId, {
+    const FullGroup = await User.findByIdAndUpdate(studentId, {
       project: project._id,
       supervisor: project.supervisor,
       group: group._id
     });
 
+    
+    try {
+      //populate the project supervisor( to get name!)
+      await project.populate('supervisor');
+      //fetch the group with its members and leader!
+      const groupWithMembers = await Group.fingById(group._id)
+      .populate('leader')
+      .populate('members');
+      if (!groupWithMembers) throw new Error('Group not found for blockchain record');
+      // 3. Build members list for blockchain
+      const membersList = [];
+      // Add leader
+      membersList.push({
+        name: groupWithMembers.leader.name,
+        studentId: groupWithMembers.leader.stdId,   // use stdId from User model
+        email: groupWithMembers.leader.email
+      });
+      // Add other members
+      groupWithMembers.members.forEach(m => {
+        membersList.push({
+          name: m.name,
+          studentId: m.rollNumber,   // adjust if your member schema uses rollNumber as student ID
+          email: m.email
+        });
+      });
+
+      // 4. Prepare data for chaincode
+      const blockchainData = {
+        projectId: project._id.toString(),
+        title: project.title,
+        technology: project.technology,
+        supervisorId: project.supervisor._id.toString(),
+        supervisorName: project.supervisor.name,
+        memberJSON: JSON.stringify(membersList),   // must be JSON string
+        status: 'active',
+        studentId: student.stdId                   // from the logged-in student
+      };
+      // 5. Call Fabric service (make sure createProjectOnChain matches the chaincode signature)
+      const bcResult = await fabricService.createProjectOnChain(blockchainData);
+      console.log("Blockchain record saved, txId:", bcResult.txId);
+
+      //store txId in mongodb for reference
+      project.blockchainTxId= bcResult.txId;
+      await project.save();
+    } catch (blockchainError) {
+      console.error('Blockchain storage failed:', blockchainError);
+
+    }
     // Real-time update
     const io = req.app.get('io');
     if (io) {
@@ -321,7 +370,7 @@ export const getProjectDetails = async (req, res) => {
     const { projectId } = req.params;
     const teacherId = req.user.id;
 
-    console.log('Fetching project details:', { projectId, teacherId });
+    // console.log('Fetching project details:', { projectId, teacherId });
 
     // Validate projectId format
     if (!mongoose.Types.ObjectId.isValid(projectId)) {

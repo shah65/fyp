@@ -1,0 +1,51 @@
+# Copyright IBM Corp. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+networks:
+  test:
+    name: fabric_test
+
+services:
+  couchdb.student.awkum.com:
+    container_name: couchdb.student.awkum.com
+    image: couchdb:3.4.2
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "5984:5984"
+    networks:
+      - test
+
+  peer0.student.awkum.com:
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb.student.awkum.com:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    depends_on:
+      - couchdb.student.awkum.com
+
+  couchdb.teacher.awkum.com:
+    container_name: couchdb.teacher.awkum.com
+    image: couchdb:3.4.2
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "6984:5984"
+    networks:
+      - test
+
+  peer0.teacher.awkum.com:
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb.teacher.awkum.com:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    depends_on:
+      - couchdb.teacher.awkum.com

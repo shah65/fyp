@@ -125,7 +125,7 @@ const Resource = () => {
     }
 
     try {
-      const res = await api.put(`/student/${project._id}/github`, {
+      const res = await api.put(`/api/student/${project._id}/github`, {
         githubRepo: githubRepo
       }, {
         withCredentials: true

@@ -1,2 +1,14 @@
-node_modules
-.env
+# Hyperledger Fabric binaries & generated crypto
+blockchain/bin/
+blockchain/builders/
+blockchain/test-network/organizations/
+blockchain/test-network/system-genesis-block/
+blockchain/test-network/channel-artifacts/
+
+# Node
+backend/node_modules/
+frontend/node_modules/
+**/.env
+
+# Uploaded files (remove this line if you actually need them in the repo)
+backend/uploads/

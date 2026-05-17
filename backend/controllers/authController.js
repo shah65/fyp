@@ -13,52 +13,52 @@ const __dirname = path.dirname(__filename);
 
 
 
-export const register = async (req, res) => {
-  try {
-    const { name, email, password, stdId, subject, department, semester, } = req.body;
+// export const register = async (req, res) => {
+//   try {
+//     const { name, email, password, stdId, subject, department, semester, } = req.body;
 
-    // ✅ Check both email and student ID
-    const existingUser = await importedUser.findOne({
-      $or: [{ email }, { stdId }],
-    });
+//     // ✅ Check both email and student ID
+//     const existingUser = await importedUser.findOne({
+//       $or: [{ email }, { stdId }],
+//     });
 
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
+//     if (existingUser) {
+//       return res.status(400).json({ message: 'User already exists' });
+//     }
 
-    // ✅ Hash password
-    const hash = await bcrypt.hash(password, 12);
-    // ✅ Save ALL required fields
-    const user = await importedUser.create({
-      name,
-      email,
-      password: hash,
-      stdId,
-      subject,
-      department,
-      semester,
+//     // ✅ Hash password
+//     const hash = await bcrypt.hash(password, 12);
+//     // ✅ Save ALL required fields
+//     const user = await importedUser.create({
+//       name,
+//       email,
+//       password: hash,
+//       stdId,
+//       subject,
+//       department,
+//       semester,
 
-    });
+//     });
 
-    // ✅ Clean response (never send password)
-    res.status(201).json({
-      message: 'User registered successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        stdId: user.stdId,
-        subject: user.subject,
-        department: user.department,
-        semester: user.semester,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
-  }
-};
+//     // ✅ Clean response (never send password)
+//     res.status(201).json({
+//       message: 'User registered successfully',
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         stdId: user.stdId,
+//         subject: user.subject,
+//         department: user.department,
+//         semester: user.semester,
+//         role: user.role,
+//       },
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 export const uploadProfileImage = async (req, res) => {
 
 
